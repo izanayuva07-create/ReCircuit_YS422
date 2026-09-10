@@ -1,0 +1,183 @@
+import React, { useEffect, useState } from 'react';
+import { Bell, LayoutDashboard, LogIn, Menu, X } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import BrandLogo from './BrandLogo';
+import { useAuth } from '../context/AuthContext';
+import { usePlatform } from '../context/PlatformContext';
+
+const publicLinks = [
+  { label: 'Home', href: '/' },
+  { label: 'How It Works', href: '/#how-it-works' },
+  { label: 'Awareness', href: '/awareness' },
+  { label: 'Safety', href: '/safety' },
+  { label: 'News', href: '/news' },
+  { label: 'About', href: '/#about' },
+];
+
+const Navbar: React.FC = () => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const { isAuthenticated, user } = useAuth();
+  const { unreadNotificationCount } = usePlatform();
+  const location = useLocation();
+
+  useEffect(() => {
+    const update = () => setScrolled(window.scrollY > 18);
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, []);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previous; };
+  }, [menuOpen]);
+
+  const isActive = (href: string) => {
+    const [pathname, hash] = href.split('#');
+    if (hash) return location.pathname === pathname && location.hash === `#${hash}`;
+    return pathname === '/' ? location.pathname === '/' && !location.hash : location.pathname.startsWith(pathname);
+  };
+
+  const closeMenu = () => setMenuOpen(false);
+
+  return (
+    <header className="sticky top-0 z-50 w-full px-3 pt-3 sm:px-4 sm:pt-4 pointer-events-none">
+      <nav
+        aria-label="Primary navigation"
+        className={`pointer-events-auto mx-auto max-w-[1240px] rounded-2xl border transition-all duration-300 ${
+          scrolled || menuOpen ? 'shadow-[0_14px_45px_rgba(8,42,24,0.12)]' : 'shadow-[0_8px_30px_rgba(8,42,24,0.07)]'
+        }`}
+        style={{
+          backgroundColor: scrolled || menuOpen ? 'rgba(252, 255, 252, 0.94)' : 'rgba(252, 255, 252, 0.76)',
+          borderColor: scrolled ? 'var(--border-strong)' : 'rgba(220, 230, 223, 0.82)',
+          backdropFilter: 'blur(22px) saturate(1.25)',
+          WebkitBackdropFilter: 'blur(22px) saturate(1.25)',
+        }}
+      >
+        <div className="flex h-[4.25rem] items-center justify-between gap-3 px-3 sm:px-5">
+          <Link to="/" onClick={closeMenu} className="flex-shrink-0 rounded-lg" aria-label="Re-Circuit home">
+            <BrandLogo size="sm" showTagline />
+          </Link>
+
+          <div className="hidden items-center gap-1 lg:flex">
+            {publicLinks.map((link) => (
+              <Link
+                key={link.href}
+                to={link.href}
+                aria-current={isActive(link.href) ? 'page' : undefined}
+                className="relative rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors hover:text-[var(--primary)]"
+                style={{ color: isActive(link.href) ? 'var(--primary)' : 'var(--text-secondary)' }}
+              >
+                {link.label}
+                {isActive(link.href) && <span className="absolute inset-x-3 -bottom-0.5 h-px rounded-full" style={{ backgroundColor: 'var(--primary)' }} />}
+              </Link>
+            ))}
+          </div>
+
+          <div className="hidden items-center gap-2 lg:flex">
+            {isAuthenticated ? (
+              <>
+                <Link
+                  to="/notifications"
+                  className="touch-target relative grid place-items-center rounded-xl border transition-colors hover:bg-white"
+                  style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                  aria-label={`${unreadNotificationCount} unread notifications`}
+                >
+                  <Bell size={18} />
+                  {unreadNotificationCount > 0 && (
+                    <span className="absolute right-1 top-1 grid min-h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-bold text-white" style={{ backgroundColor: 'var(--danger)' }}>
+                      {Math.min(unreadNotificationCount, 9)}
+                    </span>
+                  )}
+                </Link>
+                <Link
+                  to={`/${user?.role}`}
+                  className="premium-button inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
+                  style={{ backgroundColor: 'var(--primary)' }}
+                >
+                  <LayoutDashboard size={16} /> Dashboard
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold transition-colors hover:bg-white"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  <LogIn size={16} /> Login
+                </Link>
+                <Link
+                  to="/select-role"
+                  className="premium-button inline-flex min-h-11 items-center rounded-xl px-4 py-2 text-sm font-semibold text-white"
+                  style={{ backgroundColor: 'var(--primary)' }}
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="touch-target relative grid flex-none place-items-center rounded-xl border lg:hidden"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-primary)', backgroundColor: 'rgba(255,255,255,0.68)' }}
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-controls="mobile-navigation"
+            aria-expanded={menuOpen}
+          >
+            <span className={`absolute transition-all duration-300 ${menuOpen ? 'rotate-90 scale-100 opacity-100' : 'scale-75 opacity-0'}`}><X size={21} /></span>
+            <span className={`absolute transition-all duration-300 ${menuOpen ? '-rotate-90 scale-75 opacity-0' : 'rotate-0 scale-100 opacity-100'}`}><Menu size={21} /></span>
+          </button>
+        </div>
+
+        <div
+          id="mobile-navigation"
+          className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 lg:hidden ${menuOpen ? 'grid-rows-[1fr] opacity-100' : 'pointer-events-none grid-rows-[0fr] opacity-0'}`}
+        >
+          <div className="min-h-0">
+            <div className="mx-3 border-t px-1 pb-4 pt-3 sm:mx-5" style={{ borderColor: 'var(--border)' }}>
+              <div className="grid grid-cols-2 gap-1">
+                {publicLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    onClick={closeMenu}
+                    className="rounded-xl px-3 py-3 text-sm font-semibold transition-colors hover:bg-white"
+                    style={{ color: isActive(link.href) ? 'var(--primary)' : 'var(--text-primary)', backgroundColor: isActive(link.href) ? 'var(--primary-subtle)' : undefined }}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+              <div className="mt-3 flex gap-2 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+                {isAuthenticated ? (
+                  <>
+                    <Link to="/notifications" onClick={closeMenu} className="touch-target relative grid place-items-center rounded-xl border" style={{ borderColor: 'var(--border)' }} aria-label="Notifications">
+                      <Bell size={18} />
+                      {unreadNotificationCount > 0 && <span className="absolute right-2 top-2 h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--danger)' }} />}
+                    </Link>
+                    <Link to={`/${user?.role}`} onClick={closeMenu} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: 'var(--primary)' }}>
+                      <LayoutDashboard size={17} /> Go to Dashboard
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login" onClick={closeMenu} className="flex min-h-11 flex-1 items-center justify-center rounded-xl border text-sm font-semibold" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}>Login</Link>
+                    <Link to="/select-role" onClick={closeMenu} className="flex min-h-11 flex-1 items-center justify-center rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: 'var(--primary)' }}>Get Started</Link>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+  );
+};
+
+export default Navbar;
