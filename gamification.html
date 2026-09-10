@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ReCircuit - E-Waste Collector</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Plus+Jakarta+Sans:wght@600;800&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none; /* Prevents mobile scrolling while playing */
+    }
+
+    body {
+      background: #0f172a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Fredoka', cursive;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      height: 500px;
+      border: 4px solid #1e293b;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(16, 185, 129, 0.2);
+      overflow: hidden;
+      background: linear-gradient(to bottom, #38bdf8 0%, #bae6fd 60%, #e0f2fe 100%);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Glassmorphism UI Screens */
+    .ui-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      z-index: 10;
+    }
+
+    .badge-title {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid #10b981;
+      color: #34d399;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 6px 14px;
+      border-radius: 20px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      color: #facc15;
+      font-size: 32px;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+      text-shadow: 0 4px 0 #b45309, 0 8px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    p {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #e2e8f0;
+      margin-bottom: 24px;
+      max-width: 500px;
+    }
+
+    .btn {
+      background: #10b981;
+      border: 3px solid #ffffff;
+      color: #ffffff;
+      padding: 12px 36px;
+      font-family: 'Fredoka', cursive;
+      font-size: 18px;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 6px 0 #047857, 0 10px 20px rgba(0, 0, 0, 0.3);
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      background: #34d399;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="game-container">
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+
+    <!-- Start Overlay Screen -->
+    <div id="start-screen" class="ui-overlay">
+      <div class="badge-title">ReCircuit Mini-Game</div>
+      <h1>E-WASTE COLLECTOR</h1>
+      <p>
+        Move the <strong>E-WASTE COLLECTOR</strong> truck using your mouse cursor or finger touch!<br><br>
+        Catch <strong style="color: #34d399;">E-WASTE ONLY</strong> (Monitors, Phones, Batteries, Chips).<br>
+        Avoid <strong style="color: #f87171;">ORGANIC & GENERAL TRASH</strong> (Bananas, Leaves, Apples).<br><br>
+        <em>Missing e-waste or catching trash ends the game!</em>
+      </p>
+      <button class="btn" onclick="startGame()">START MISSION</button>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameover-screen" class="ui-overlay hidden">
+      <div class="badge-title" style="border-color: #f87171; color: #f87171; background: rgba(248, 113, 113, 0.15);">Mission Failed</div>
+      <h1 style="color: #f87171; text-shadow: 0 4px 0 #991b1b;">GAME OVER</h1>
+      <p id="fail-reason" style="color: #facc15; font-size: 15px; font-weight: 700; margin-bottom: 12px;"></p>
+      <p style="font-size: 20px; font-weight: 700; margin-bottom: 24px;">FINAL SCORE: <span id="final-score" style="color: #34d399;">0</span></p>
+      <button class="btn" onclick="startGame()">TRY AGAIN</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const startScreen = document.getElementById('start-screen');
+    const gameOverScreen = document.getElementById('gameover-screen');
+    const finalScoreEl = document.getElementById('final-score');
+    const failReasonEl = document.getElementById('fail-reason');
+
+    let score = 0;
+    let gameRunning = false;
+    let animationFrameId;
+    let spawnTimer = 0;
+    let spawnInterval = 60;
+
+    // Player Truck Object
+    const truck = {
+      x: canvas.width / 2 - 60,
+      y: canvas.height - 85,
+      width: 120,
+      height: 55
+    };
+
+    let targetX = canvas.width / 2;
+    const items = [];
+
+    // Waste Definitions
+    const WASTE_TYPES = {
+      // E-WASTE (CATCH)
+      MONITOR: { name: 'Computer Monitor', isEWaste: true, symbol: '🖥️', color: '#1e293b' },
+      PHONE: { name: 'Smartphone', isEWaste: true, symbol: '📱', color: '#334155' },
+      BATTERY: { name: 'Li-Ion Battery', isEWaste: true, symbol: '🔋', color: '#d97706' },
+      CIRCUIT: { name: 'Circuit Board', isEWaste: true, symbol: '💾', color: '#059669' },
+      LAPTOP: { name: 'Laptop', isEWaste: true, symbol: '💻', color: '#475569' },
+
+      // GENERAL TRASH (AVOID)
+      BANANA: { name: 'Banana Peel', isEWaste: false, symbol: '🍌', color: '#ca8a04' },
+      LEAF: { name: 'Organic Leaves', isEWaste: false, symbol: '🍃', color: '#16a34a' },
+      APPLE: { name: 'Apple Core', isEWaste: false, symbol: '🍎', color: '#dc2626' },
+      BOTTLE: { name: 'Plastic Bottle', isEWaste: false, symbol: '🍾', color: '#0284c7' }
+    };
+
+    // Global Position Pointer (Desktop Mouse + Mobile Touch Support)
+    function updatePointerPosition(clientX) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      targetX = (clientX - rect.left) * scaleX;
+    }
+
+    // Mouse Controls
+    window.addEventListener('mousemove', (e) => {
+      updatePointerPosition(e.clientX);
+    });
+
+    // Touch Controls (Mobile / Tablet)
+    window.addEventListener('touchstart', (e) => {
+      if (e.touches.length > 0) {
+        updatePointerPosition(e.touches[0].clientX);
+      }
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+      if (e.touches.length > 0) {
+        updatePointerPosition(e.touches[0].clientX);
+      }
+    }, { passive: true });
+
+    function startGame() {
+      score = 0;
+      items.length = 0;
+      spawnTimer = 0;
+      spawnInterval = 60;
+      gameRunning = true;
+
+      startScreen.classList.add('hidden');
+      gameOverScreen.classList.add('hidden');
+
+      cancelAnimationFrame(animationFrameId);
+      gameLoop();
+    }
+
+    function spawnItem() {
+      const keys = Object.keys(WASTE_TYPES);
+      const randomKey = keys[Math.floor(Math.random() * keys.length)];
+      const typeData = WASTE_TYPES[randomKey];
+
+      items.push({
+        x: Math.random() * (canvas.width - 60) + 10,
+        y: -50,
+        width: 46,
+        height: 46,
+        speed: 2.5 + Math.random() * 1.5 + Math.min(score * 0.1, 4.5),
+        type: typeData
+      });
+    }
+
+    function triggerGameOver(reason) {
+      gameRunning = false;
+      finalScoreEl.innerText = score;
+      failReasonEl.innerText = reason;
+      gameOverScreen.classList.remove('hidden');
+    }
+
+    function update() {
+      // Smooth interpolation for truck movement following cursor/touch
+      truck.x += (targetX - truck.width / 2 - truck.x) * 0.35;
+
+      // Bound truck inside canvas walls
+      if (truck.x < 10) truck.x = 10;
+      if (truck.x + truck.width > canvas.width - 10) truck.x = canvas.width - truck.width - 10;
+
+      // Spawning
+      spawnTimer++;
+      if (spawnTimer >= spawnInterval) {
+        spawnItem();
+        spawnTimer = 0;
+        if (spawnInterval > 22) spawnInterval -= 0.5;
+      }
+
+      // Movement & Collisions
+      for (let i = items.length - 1; i >= 0; i--) {
+        const item = items[i];
+        item.y += item.speed;
+
+        // Truck Bed Catch Collision
+        if (
+          item.y + item.height >= truck.y &&
+          item.y <= truck.y + truck.height &&
+          item.x + item.width >= truck.x &&
+          item.x <= truck.x + truck.width
+        ) {
+          if (item.type.isEWaste) {
+            score += 1;
+            items.splice(i, 1);
+          } else {
+            triggerGameOver(`Accidentally Collected: ${item.type.name}`);
+            return;
+          }
+          continue;
+        }
+
+        // Missed Ground Collision
+        if (item.y + item.height >= canvas.height - 20) {
+          if (item.type.isEWaste) {
+            triggerGameOver(`Missed E-Waste Item: ${item.type.name}`);
+            return;
+          } else {
+            items.splice(i, 1);
+          }
+        }
+      }
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Environment: Sun
+      ctx.fillStyle = '#fde047';
+      ctx.beginPath();
+      ctx.arc(700, 75, 45, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Background Hills (Layer 1)
+      ctx.fillStyle = '#86efac';
+      ctx.beginPath();
+      ctx.arc(220, 620, 360, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Background Hills (Layer 2)
+      ctx.fillStyle = '#4ade80';
+      ctx.beginPath();
+      ctx.arc(600, 640, 400, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Ground Base
+      ctx.fillStyle = '#15803d';
+      ctx.fillRect(0, canvas.height - 25, canvas.width, 25);
+      ctx.fillStyle = '#22c55e';
+      ctx.fillRect(0, canvas.height - 25, canvas.width, 6);
+
+      // --- DRAW TRUCK: "E-WASTE COLLECTOR" ---
+      const tx = truck.x;
+      const ty = truck.y;
+
+      // Truck Chassis/Body
+      ctx.fillStyle = '#10b981';
+      ctx.beginPath();
+      ctx.roundRect(tx, ty + 10, truck.width, 30, 8);
+      ctx.fill();
+
+      // Cargo Container Bed
+      ctx.fillStyle = '#065f46';
+      ctx.fillRect(tx + 6, ty - 6, 68, 22);
+
+      // Truck Cabin
+      ctx.fillStyle = '#047857';
+      ctx.beginPath();
+      ctx.roundRect(tx + truck.width - 42, ty + 2, 38, 22, 6);
+      ctx.fill();
+
+      // Windshield Window
+      ctx.fillStyle = '#e0f2fe';
+      ctx.beginPath();
+      ctx.roundRect(tx + truck.width - 24, ty + 6, 16, 14, 4);
+      ctx.fill();
+
+      // Text Badge on Container Side
+      ctx.fillStyle = '#facc15';
+      ctx.font = '700 8px "Plus Jakarta Sans"';
+      ctx.fillText('E-WASTE COLLECTOR', tx + 10, ty + 28);
+
+      // Wheels
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(tx + 24, ty + 42, 13, 0, Math.PI * 2);
+      ctx.arc(tx + truck.width - 26, ty + 42, 13, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.beginPath();
+      ctx.arc(tx + 24, ty + 42, 5, 0, Math.PI * 2);
+      ctx.arc(tx + truck.width - 26, ty + 42, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw Falling Waste Items
+      items.forEach((item) => {
+        // Item Shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        ctx.beginPath();
+        ctx.roundRect(item.x + 3, item.y + 3, item.width, item.height, 12);
+        ctx.fill();
+
+        // Item Container
+        ctx.fillStyle = item.type.color;
+        ctx.beginPath();
+        ctx.roundRect(item.x, item.y, item.width, item.height, 12);
+        ctx.fill();
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
+
+        // Emoji Symbol
+        ctx.font = '22px sans-serif';
+        ctx.fillText(item.type.symbol, item.x + 10, item.y + 32);
+      });
+
+      // HUD Score Card
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+      ctx.beginPath();
+      ctx.roundRect(20, 20, 220, 48, 16);
+      ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.stroke();
+
+      ctx.fillStyle = '#facc15';
+      ctx.font = '700 18px "Fredoka"';
+      ctx.fillText(`SCORE: ${score}`, 38, 50);
+    }
+
+    function gameLoop() {
+      if (!gameRunning) return;
+      update();
+      render();
+      animationFrameId = requestAnimationFrame(gameLoop);
+    }
+  </script>
+</body>
+</html>
