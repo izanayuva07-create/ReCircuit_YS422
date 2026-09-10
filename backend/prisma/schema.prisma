@@ -1,0 +1,395 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. User & Authentication
+model User {
+  id            String                  @id @default(cuid())
+  clerkId       String?                 @unique
+  email         String                  @unique
+  phone         String?
+  name          String
+  role          String                  @default("source") // source, collector, admin, moderator, auditor
+  avatarUrl     String?
+  region        String                  @default("IN") // IN, US, EU, SG
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  collector     Collector?
+  sourceProfile SourceProfile?
+  wallet        Wallet?
+  preferences   NotificationPreference?
+  notifications Notification[]
+  badges        Badge[]
+  certificates  Certificate[]
+}
+
+// 2. Collector Entity & KYC
+model Collector {
+  id                  String         @id @default(cuid())
+  userId              String         @unique
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessName        String
+  registrationNumber  String?
+  serviceRadiusKm     Float          @default(50.0) // BR-006: <= 100km
+  locationLat         Float          @default(28.6139)
+  locationLng         Float          @default(77.2090)
+  serviceAreaGeoJson  String?        // Geometry polygon in GeoJSON
+  rating              Float          @default(5.0)
+  totalCollections    Int            @default(0)
+  kycStatus           String         @default("PENDING") // PENDING, APPROVED, REJECTED
+  kycDocuments        String?        // JSON serialized URLs and docs
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  inventories         Inventory[]
+  bids                Bid[]
+  bookings            Booking[]
+  payoutMethods       PayoutMethod[]
+}
+
+// 3. Source Profile
+model SourceProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  defaultAddress  String?
+  locationLat     Float?   @default(28.6139)
+  locationLng     Float?   @default(77.2090)
+  savedCollectors String?  // JSON serialized collector IDs
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// 4. E-Waste Categories Taxonomy
+model Category {
+  id                  String      @id @default(cuid())
+  slug                String      @unique
+  name                String
+  parentId            String?
+  aiClassId           String      @unique
+  avgMarketPriceCents Int         @default(1000)
+  floorPriceCents     Int         @default(200) // BR-008
+  attributesSchema    String?     // JSON serialized attributes
+  eprDetails          String?     // Form 1/2/3, CPCB recycling rules
+  active              Boolean     @default(true)
+  createdAt           DateTime    @default(now())
+
+  listings            Listing[]
+  inventories         Inventory[]
+}
+
+// 5. Source Listings (Workflow: CREATING -> AI_CLASSIFYING -> CONFIRMING -> ACTIVE -> MATCHED -> BOOKED -> IN_TRANSIT -> COMPLETED -> PAID)
+model Listing {
+  id              String    @id @default(cuid())
+  sourceId        String
+  categoryId      String?
+  category        Category? @relation(fields: [categoryId], references: [id])
+  title           String
+  description     String?
+  images          String    // JSON array of image URLs
+  status          String    @default("CREATING") 
+  aiPredictions   String?   // JSON top-5 predictions
+  aiConfidence    Float?    // 0.0 - 1.0
+  aiModelVersion  String?   // e.g. efficientnet-b0-e-waste-v3.2
+  extractedAttrs  String?   // JSON key-values
+  locationLat     Float     @default(28.6139)
+  locationLng     Float     @default(77.2090)
+  address         String?
+  estimatedWeight Float?    // kg
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  bids            Bid[]
+  bookings        Booking[]
+
+  @@index([status])
+  @@index([sourceId])
+}
+
+// 6. Collector Inventory (Workflow: DRAFT -> ACTIVE -> BIDDING -> NEGOTIATING -> ACCEPTED -> BOOKED -> IN_TRANSIT -> COMPLETED -> PAID_OUT)
+model Inventory {
+  id               String    @id @default(cuid())
+  collectorId      String
+  collector        Collector @relation(fields: [collectorId], references: [id], onDelete: Cascade)
+  categoryId       String
+  category         Category  @relation(fields: [categoryId], references: [id])
+  title            String
+  description      String?
+  floorPriceCents  Int       @default(0) // BR-008
+  currentBidCents  Int       @default(0)
+  status           String    @default("ACTIVE")
+  weightKg         Float?
+  images           String?   // JSON array
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  bids             Bid[]
+
+  @@index([status])
+  @@index([collectorId])
+}
+
+// 7. Bids & Counter-Offers (BR-002: 24h expiration)
+model Bid {
+  id                 String     @id @default(cuid())
+  inventoryId        String?
+  inventory          Inventory? @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  listingId          String?
+  listing            Listing?   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  collectorId        String
+  collector          Collector  @relation(fields: [collectorId], references: [id])
+  amountCents        Int        // BR-008: >= floorPriceCents
+  counterAmountCents Int?
+  status             String     @default("PENDING") // PENDING, ACCEPTED, REJECTED, COUNTERED, EXPIRED
+  expiresAt          DateTime   // BR-002
+  message            String?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@index([status])
+  @@index([collectorId])
+}
+
+// 8. Bookings & Dual-Mode Fulfillment
+// Workflow: BOOKED -> CONFIRMED -> IN_TRANSIT -> ARRIVED -> VERIFIED -> COMPLETED -> ESCROW_RELEASE (or DISPUTED)
+model Booking {
+  id               String        @id @default(cuid())
+  listingId        String
+  listing          Listing       @relation(fields: [listingId], references: [id])
+  collectorId      String
+  collector        Collector     @relation(fields: [collectorId], references: [id])
+  sourceId         String
+  fulfillmentType  String        @default("PICKUP") // PICKUP or DELIVERY
+  status           String        @default("BOOKED")
+  agreedPriceCents Int           // Total amount
+  escrowHeldCents  Int           // BR-003, BR-004: 100% in escrow until completion
+  platformFeeCents Int           // BR-003: 10% platform fee
+  scheduledAt      DateTime?
+  arrivedAt        DateTime?
+  completedAt      DateTime?
+  collectorRating  Float?        // BR-005
+  sourceRating     Float?        // BR-005
+  collectorReview  String?
+  sourceReview     String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  route            BookingRoute?
+  dispute          Dispute?
+
+  @@index([status])
+  @@index([collectorId])
+  @@index([sourceId])
+}
+
+// 9. Booking Live Route & Telemetry (§7)
+model BookingRoute {
+  id         String   @id @default(cuid())
+  bookingId  String   @unique
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  currentLat Float
+  currentLng Float
+  heading    Float?   @default(0)
+  speed      Float?   @default(0)
+  waypoints  String?  // JSON array of [lat, lng]
+  etaMinutes Int?     @default(15)
+  updatedAt  DateTime @default(now())
+}
+
+// 10. Dispute Resolution (§2.3, BR-009)
+model Dispute {
+  id          String    @id @default(cuid())
+  bookingId   String    @unique
+  booking     Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  raisedBy    String    // userId
+  reason      String    // ITEM_MISMATCH, NO_SHOW, PAYMENT_ISSUE, DAMAGE, OTHER
+  description String
+  evidence    String    // JSON array of R2/storage URLs
+  status      String    @default("OPEN") // OPEN, IN_REVIEW, RESOLVED_COLLECTOR, RESOLVED_SOURCE, RESOLVED_SPLIT, ESCALATED
+  mediatorId  String?
+  resolution  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// 11. Financial Ledger & Wallet (§5)
+model Wallet {
+  id           String        @id @default(cuid())
+  userId       String        @unique
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balanceCents Int           @default(0) // Strict BigInt / Cents representation
+  currency     String        @default("INR")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  transactions Transaction[]
+}
+
+model Transaction {
+  id                String   @id @default(cuid())
+  walletId          String
+  wallet            Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  type              String   // ESCROW_HOLD, ESCROW_RELEASE, PLATFORM_FEE, WITHDRAWAL, PAYOUT, ADJUSTMENT
+  amountCents       Int      // +credit, -debit
+  balanceAfterCents Int
+  refId             String   // bookingId, withdrawalId, etc.
+  refType           String   // booking, withdrawal, fee, bonus, adjustment
+  description       String
+  metadata          String?  // JSON metadata
+  createdAt         DateTime @default(now())
+
+  @@index([walletId, createdAt])
+  @@index([refId])
+}
+
+// 12. Collector Payout Method (BR-001)
+model PayoutMethod {
+  id           String    @id @default(cuid())
+  collectorId  String
+  collector    Collector @relation(fields: [collectorId], references: [id], onDelete: Cascade)
+  type         String    // BANK_ACCOUNT, UPI, CARD, WALLET
+  provider     String    // stripe, bank_transfer, upi
+  providerData String    // JSON encrypted account details
+  isDefault    Boolean   @default(false)
+  verifiedAt   DateTime?
+  createdAt    DateTime  @default(now())
+}
+
+// 13. Idempotency Key (§2.3, §3.1)
+model IdempotencyKey {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  endpoint  String
+  payload   String   // JSON
+  response  String?  // JSON
+  status    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
+// 14. Audit Log (§2.3)
+model AuditLog {
+  id        String   @id @default(cuid())
+  entity    String
+  entityId  String
+  action    String
+  diff      String?  // JSON diff
+  userId    String?
+  ip        String?
+  ua        String?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([userId, createdAt])
+}
+
+// 15. Feature Flags (§2.3)
+model FeatureFlag {
+  key       String   @id
+  enabled   Boolean  @default(false)
+  rollout   Int      @default(0) // 0-100%
+  targeting String?  // JSON
+  metadata  String?  // JSON
+  updatedAt DateTime @updatedAt
+}
+
+// 16. Notifications & Preferences (§2.3)
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, BID, BOOKING, PAYMENT, DISPUTE
+  read      Boolean  @default(false)
+  data      String?  // JSON
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+}
+
+model NotificationPreference {
+  id         String  @id @default(cuid())
+  userId     String  @unique
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channels   String  // JSON: {push: true, email: true, sms: false}
+  quietHours String? // JSON: {start: "22:00", end: "07:00", tz: "Asia/Kolkata"}
+}
+
+// 17. Gamification & Certifications (§1.3 BR-010)
+model Badge {
+  id          String   @id @default(cuid())
+  userId      String?
+  collectorId String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeType   String   // ZERO_WASTE_CHAMPION, CPCB_CERTIFIED_RECYCLER, GOLD_COLLECTOR, HAZARD_SPECIALIST
+  name        String
+  description String
+  iconUrl     String?
+  awardedAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([collectorId])
+}
+
+// 18. E-Waste Knowledge & Regulations (§3.4)
+model Article {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  content     String
+  summary     String?
+  tags        String?  // JSON array
+  author      String   @default("ReCircuit Editorial")
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
+
+// 19. Green Recycling Certificates
+model Certificate {
+  id                    String    @id @default(cuid())
+  certificateId         String    @unique // RC-EWR-2026-000001
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactionId         String    @unique // Unique link to completed transaction / booking
+  bookingId             String?
+  eWasteId              String?   // listingId
+  partnerId             String    // collectorId
+  certificateStatus     String    @default("VERIFIED") // VERIFIED, REVOKED
+  userNameSnapshot      String
+  wasteType             String
+  wasteCategory         String
+  itemName              String
+  quantity              Int       @default(1)
+  weightKg              Float
+  collectionDate        DateTime
+  issueDate             DateTime  @default(now())
+  collectionLocation    String
+  collectionMethod      String    @default("PICKUP") // PICKUP or DELIVERY
+  recyclingMethod       String    @default("Refining & Material Recovery")
+  processingStatus      String    @default("COMPLETED")
+  materialsRecoveredKg  Float?
+  co2ReductionKg        Float?
+  materialsBreakdown    String?   // JSON
+  verificationToken     String    @unique
+  verificationUrl       String
+  qrCodeDataUrl         String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  revokedAt             DateTime?
+  revocationReason      String?
+
+  @@index([userId])
+  @@index([partnerId])
+  @@index([certificateStatus])
+}
+
