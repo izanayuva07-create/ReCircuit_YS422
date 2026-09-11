@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReCircuit — E-Waste Circular Marketplace & Live Handover Payout</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header>
+    <a href="#" class="brand">
+      <div class="brand-icon">↻</div>
+      ReCircuit
+    </a>
+
+    <div class="role-switcher">
+      <button class="role-btn active" id="modeDual" onclick="setMode('dual')">⚡ Split Dual View</button>
+      <button class="role-btn" id="modeCollector" onclick="setMode('collector')">🚚 Collector</button>
+      <button class="role-btn" id="modeSeller" onclick="setMode('seller')">👨‍💼 Seller / Source</button>
+    </div>
+
+    <div class="wallet-badge">
+      <span>Wallet:</span>
+      <span id="headerWallet">₹4,500</span>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="main-container">
+
+    <div class="banner-highlight">
+      <h1>E-Waste Collection & Instant Payout Engine</h1>
+      <p>Experience the end-to-end circular flow: Collector arrives at doorstep ➔ Dispatches 4-digit Receive OTP ➔ Seller confirms handover on their device ➔ Escrow amount is instantly credited!</p>
+    </div>
+
+    <div class="view-mode-tabs">
+      <button class="view-tab active" onclick="resetDemo()">↺ Reset Demo State</button>
+      <span style="font-size: 0.85rem; color: var(--text-muted); align-self: center; margin-left: auto;">
+        🟢 Standalone Modular App (No Server or Localhost Needed)
+      </span>
+    </div>
+
+    <!-- Dual Split Simulation Grid -->
+    <div class="dual-grid" id="mainGrid">
+
+      <!-- LEFT: COLLECTOR SCREEN -->
+      <section class="screen-card" id="collectorCard">
+        <div class="screen-header">
+          <div class="screen-title">
+            <span>🚚</span> Collector Portal
+          </div>
+          <span class="status-tag active" id="collectorStatusTag">On the way</span>
+        </div>
+
+        <div class="item-box">
+          <img src="https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=200&q=80" class="item-img" alt="ThinkPad T480">
+          <div class="item-details">
+            <h4>ThinkPad T480 Corporate Fleet (16GB)</h4>
+            <p>Seller: Anna Nagar, Chennai · 1.8 kg E-Waste</p>
+            <div class="payout-val">Agreed Payout: ₹4,500</div>
+          </div>
+        </div>
+
+        <div class="stepper">
+          <div class="step-node completed" id="cStep1">
+            <div class="node-circle">✓</div>
+            <div class="node-label">Confirmed</div>
+          </div>
+          <div class="step-node current" id="cStep2">
+            <div class="node-circle">2</div>
+            <div class="node-label">En Route</div>
+          </div>
+          <div class="step-node" id="cStep3">
+            <div class="node-circle">3</div>
+            <div class="node-label">Arrived</div>
+          </div>
+          <div class="step-node" id="cStep4">
+            <div class="node-circle">4</div>
+            <div class="node-label">Verified</div>
+          </div>
+        </div>
+
+        <!-- Dynamic Collector Actions -->
+        <div id="collectorActionArea">
+          <button class="btn btn-primary" onclick="collectorArrive()">
+            📍 I Have Arrived at Seller Doorstep
+          </button>
+        </div>
+
+        <div id="collectorOtpArea" style="display: none;">
+          <div class="otp-display-panel">
+            <p style="font-size: 0.82rem; font-weight: 700; color: #92400e; text-transform: uppercase;">
+              Receive OTP Sent to Seller
+            </p>
+            <div class="otp-digits">
+              <span class="otp-box" id="cDigit1">7</span>
+              <span class="otp-box" id="cDigit2">8</span>
+              <span class="otp-box" id="cDigit3">4</span>
+              <span class="otp-box" id="cDigit4">2</span>
+            </div>
+            <p style="font-size: 0.78rem; color: #78350f;">
+              Share this code with the seller if requested. Waiting for seller verification on their device.
+            </p>
+          </div>
+          <button class="btn btn-outline" style="margin-top: 0.5rem;" onclick="generateNewOtp()">
+            ↺ Resend New OTP
+          </button>
+        </div>
+
+        <div id="collectorCompleteArea" style="display: none;">
+          <div class="payout-success-banner">
+            <div style="font-size: 2rem; margin-bottom: 0.3rem;">🎉</div>
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary-dark);">Handover Complete & Certified!</h3>
+            <p style="font-size: 0.82rem; color: #065f46; margin-top: 0.2rem;">
+              ₹4,500 transferred to seller. Item has been added into your certified digital inventory lot.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: SELLER / SOURCE SCREEN -->
+      <section class="screen-card highlight" id="sellerCard">
+        <div class="screen-header">
+          <div class="screen-title">
+            <span>👨‍💼</span> Seller (Source) Portal
+          </div>
+          <span class="status-tag" id="sellerStatusTag">Waiting for arrival</span>
+        </div>
+
+        <div class="item-box">
+          <img src="https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=200&q=80" class="item-img" alt="ThinkPad T480">
+          <div class="item-details">
+            <h4>ThinkPad T480 Corporate Fleet (16GB)</h4>
+            <p>Collector: EcoMove Green Logistics</p>
+            <div class="payout-val">Expected Payment: ₹4,500</div>
+          </div>
+        </div>
+
+        <!-- Waiting State -->
+        <div id="sellerWaitingArea" style="text-align: center; padding: 1.5rem 0;">
+          <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏳</div>
+          <h4 style="font-size: 1rem; font-weight: 700;">Collector is on the way</h4>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.3rem;">
+            When the collector arrives and sends the Receive OTP, an input prompt will appear here to release your payment.
+          </p>
+        </div>
+
+        <!-- OTP Input Area -->
+        <div id="sellerOtpArea" style="display: none;">
+          <div style="background: var(--primary-subtle); border: 1.5px solid var(--primary-border); border-radius: 16px; padding: 1.25rem; margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-dark);">
+                🔔 Collector Arrived at Location
+              </span>
+              <button style="border: none; background: #fff; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.72rem; font-weight: 700; color: var(--primary); cursor: pointer;" onclick="autofillSellerOtp()">
+                Autofill OTP
+              </button>
+            </div>
+            <p style="font-size: 0.82rem; color: #065f46; margin-top: 0.3rem;">
+              Enter the 4-digit Receive OTP given by your collector to authenticate handover & receive <strong>₹4,500</strong>.
+            </p>
+          </div>
+
+          <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+            Enter 4-Digit Receive OTP
+          </label>
+          <input type="text" id="sellerOtpInput" class="otp-input-field" maxlength="4" placeholder="0000">
+
+          <button class="btn btn-primary" onclick="sellerVerifyOtp()">
+            ✨ Verify OTP & Receive ₹4,500
+          </button>
+        </div>
+
+        <!-- Completed Area -->
+        <div id="sellerCompleteArea" style="display: none;">
+          <div class="payout-success-banner">
+            <div style="font-size: 2.2rem;">💰</div>
+            <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--primary-dark);">₹4,500 Received Successfully!</h3>
+            <p style="font-size: 0.82rem; color: #065f46; margin-top: 0.2rem;">
+              Funds deposited into your linked account. Traceability certificate minted.
+            </p>
+
+            <div style="background: #fff; border-radius: 12px; padding: 0.8rem; margin-top: 1rem; border: 1px solid var(--primary-border);">
+              <div class="receipt-row">
+                <span style="color: var(--text-muted);">Transaction ID</span>
+                <strong id="receiptTxn">TXN-RC-7842-2026</strong>
+              </div>
+              <div class="receipt-row">
+                <span style="color: var(--text-muted);">Amount Paid</span>
+                <strong style="color: var(--primary);">₹4,500 (INR)</strong>
+              </div>
+              <div class="receipt-row">
+                <span style="color: var(--text-muted);">Status</span>
+                <strong style="color: var(--primary);">Settled · Instant Escrow</strong>
+              </div>
+              <div class="receipt-row">
+                <span style="color: var(--text-muted);">CPCB Form 1 Green Cert</span>
+                <strong style="color: var(--primary);">Verified & Active</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <!-- Celebratory Modal -->
+  <div class="modal-backdrop" id="payoutModal">
+    <div class="modal-content">
+      <div style="width: 64px; height: 64px; background: #d1fae5; color: #047857; border-radius: 20px; display: grid; place-items: center; font-size: 2rem; margin: 0 auto 1rem;">
+        ₹
+      </div>
+      <span class="status-tag success">Instant Payout Credited</span>
+      <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 2rem; font-weight: 800; color: var(--text-main); margin-top: 0.5rem;">
+        ₹4,500 Received!
+      </h2>
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin: 0.5rem 0 1.5rem;">
+        Your e-waste handover with <strong>EcoMove Green Logistics</strong> has been verified. The full payment is now credited to your wallet.
+      </p>
+
+      <button class="btn btn-primary" onclick="closeModal()">
+        Done & Continue
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-popup" id="toastBox">
+    <span id="toastMsg">Notification message</span>
+  </div>
+
+  <!-- External Script -->
+  <script src="app.js"></script>
+</body>
+</html>

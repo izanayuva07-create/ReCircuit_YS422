@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReCircuit | Pickup Handover</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+    :root {
+      --ink: #19332f;
+      --muted: #66807a;
+      --paper: #fffdf6;
+      --mint: #dff5df;
+      --green: #207a57;
+      --green-dark: #155642;
+      --yellow: #ffd86b;
+      --coral: #f47d68;
+      --line: #dce8dd;
+      --shadow: 0 24px 60px rgba(39, 83, 59, .14);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 8%, #fff0b8 0 11%, transparent 28%),
+        linear-gradient(135deg, #eef9e8 0%, #fffdf6 52%, #e7f3ef 100%);
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: 28px 0 42px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 42px; }
+    .brand { display: flex; align-items: center; gap: 11px; font: 700 20px 'Space Grotesk', sans-serif; letter-spacing: -.4px; }
+    .brand-mark { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: var(--green); color: #fff; font-size: 20px; box-shadow: 4px 4px 0 #b9dfb9; }
+    .job-chip { padding: 9px 14px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.72); color: var(--muted); font-size: 12px; font-weight: 700; }
+
+    .intro { max-width: 690px; margin-bottom: 28px; }
+    .eyebrow { margin-bottom: 11px; color: var(--green); font-size: 12px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; }
+    h1 { margin: 0; font: 700 clamp(34px, 5vw, 62px)/.98 'Space Grotesk', sans-serif; letter-spacing: -2.6px; }
+    .intro p { max-width: 580px; margin: 18px 0 0; color: var(--muted); font-size: 16px; line-height: 1.6; }
+
+    .layout { display: grid; grid-template-columns: .82fr 1.18fr; gap: 22px; align-items: start; }
+    .panel { border: 1px solid rgba(177, 208, 182, .75); border-radius: 24px; background: rgba(255,255,255,.82); box-shadow: var(--shadow); }
+    .journey { padding: 26px; background: var(--green-dark); color: #fff; overflow: hidden; position: relative; }
+    .journey::after { content: ''; position: absolute; width: 170px; height: 170px; right: -60px; bottom: -65px; border: 28px solid rgba(255,216,107,.78); border-radius: 50%; }
+    .journey h2, .handover h2 { margin: 0; font: 600 21px 'Space Grotesk', sans-serif; }
+    .journey > p { margin: 8px 0 27px; color: #b9d8c0; font-size: 13px; line-height: 1.5; }
+    .steps { list-style: none; padding: 0; margin: 0; }
+    .step { display: grid; grid-template-columns: 36px 1fr; gap: 13px; position: relative; padding-bottom: 25px; }
+    .step:last-child { padding-bottom: 0; }
+    .step:not(:last-child)::after { content: ''; position: absolute; left: 17px; top: 34px; width: 2px; height: calc(100% - 24px); background: #467e62; }
+    .step-number { z-index: 1; display: grid; place-items: center; width: 35px; height: 35px; border-radius: 50%; background: #356d54; color: #cbe2c9; font-size: 13px; font-weight: 700; }
+    .step.current .step-number { background: var(--yellow); color: var(--ink); }
+    .step strong { display: block; padding-top: 3px; font-size: 14px; }
+    .step span { display: block; margin-top: 4px; color: #b9d8c0; font-size: 12px; line-height: 1.4; }
+    .journey-footer { position: relative; z-index: 1; display: flex; gap: 10px; margin-top: 30px; padding-top: 18px; border-top: 1px solid #467e62; color: #d8ecda; font-size: 12px; }
+
+    .handover { padding: 28px; }
+    .section-heading { display: flex; justify-content: space-between; align-items: start; gap: 16px; margin-bottom: 24px; }
+    .status-pill { display: flex; align-items: center; gap: 7px; padding: 8px 10px; border-radius: 999px; background: var(--mint); color: var(--green-dark); font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--coral); }
+    .status-dot.settled { background: var(--green); }
+    label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 12px; font-weight: 700; }
+    input { width: 100%; padding: 14px 15px; border: 1px solid var(--line); border-radius: 12px; outline: none; background: #fbfef9; color: var(--ink); font: 500 15px 'DM Sans', sans-serif; transition: border .2s, box-shadow .2s; }
+    input:focus { border-color: var(--green); box-shadow: 0 0 0 4px rgba(32,122,87,.1); }
+    .field { margin-bottom: 18px; }
+    .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    button { width: 100%; padding: 14px 16px; border: 0; border-radius: 12px; cursor: pointer; font: 700 13px 'DM Sans', sans-serif; transition: transform .2s, box-shadow .2s, background .2s; }
+    button:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(32,122,87,.16); }
+    .primary { background: var(--green); color: #fff; }
+    .primary:hover { background: var(--green-dark); }
+    .secondary { background: #fff0c3; color: #684f12; }
+    .divider { display: flex; align-items: center; gap: 12px; margin: 25px 0; color: #9bb1a4; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+    .divider::before, .divider::after { content: ''; height: 1px; flex: 1; background: var(--line); }
+    .otp-input { letter-spacing: 8px; font: 700 22px 'Space Grotesk', sans-serif; text-align: center; }
+    .note { margin: 10px 0 0; color: var(--muted); font-size: 11px; }
+    .output { min-height: 86px; margin-top: 22px; padding: 15px; border: 1px dashed #b8d1bb; border-radius: 14px; background: #f4fbf1; color: #39624c; font: 12px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; word-break: break-word; }
+    .footer-note { margin-top: 18px; color: var(--muted); font-size: 12px; text-align: center; }
+
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 28px, 540px); padding-top: 18px; }
+      .topbar { margin-bottom: 32px; }
+      .job-chip { display: none; }
+      .layout { grid-template-columns: 1fr; }
+      h1 { letter-spacing: -1.6px; }
+      .journey { order: 2; }
+      .handover { order: 1; padding: 22px; }
+    }
+    @media (max-width: 390px) {
+      .button-row { grid-template-columns: 1fr; }
+      .section-heading { display: block; }
+      .status-pill { display: inline-flex; margin-top: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">↻</span> ReCircuit</div>
+      <div class="job-chip">PICKUP JOB · JOB_EKART_2026_99</div>
+    </header>
+
+    <section class="intro">
+      <div class="eyebrow">E-waste collection · secure handover</div>
+      <h1>Make every pickup feel effortless.</h1>
+      <p>Verify the customer at the doorstep, release the e-waste handover, and settle their wallet in one clear flow.</p>
+    </section>
+
+    <section class="layout">
+      <aside class="panel journey">
+        <h2>Pickup journey</h2>
+        <p>Every handover is tracked from arrival to payment.</p>
+        <ol class="steps">
+          <li class="step"><div class="step-number">1</div><div><strong>Request accepted</strong><span>Collector approved the e-waste pickup.</span></div></li>
+          <li class="step"><div class="step-number">2</div><div><strong>E-kart dispatched</strong><span>Handler is at the customer location.</span></div></li>
+          <li class="step current"><div class="step-number">3</div><div><strong>Confirm handover</strong><span>Use the OTP to authorize collection.</span></div></li>
+          <li class="step"><div class="step-number">4</div><div><strong>Wallet settled</strong><span>Payment is released after verification.</span></div></li>
+        </ol>
+        <div class="journey-footer"><span>●</span> Handler connected · awaiting customer</div>
+      </aside>
+
+      <section class="panel handover">
+        <div class="section-heading">
+          <div><div class="eyebrow">Step 03 / 04</div><h2>Handover & Payment Settlement</h2></div>
+          <div class="status-pill"><span id="statusDot" class="status-dot"></span><span id="statusText">Awaiting Handover OTP</span></div>
+        </div>
+
+        <div class="field">
+          <label for="userMobile">Seller mobile number</label>
+          <input type="tel" id="userMobile" value="+91 98765 43210" aria-label="Seller mobile number">
+        </div>
+        <div class="button-row">
+          <button class="primary" onclick="requestOtp()">Send Receive OTP</button>
+          <button class="secondary" onclick="requestOtp()">Resend OTP</button>
+        </div>
+
+        <div class="divider">Seller Verification & Payout</div>
+        <div class="field">
+          <label for="otpBox">Enter the 6-digit Receive OTP</label>
+          <input class="otp-input" type="text" id="otpBox" inputmode="numeric" maxlength="6" placeholder="000000" aria-label="Six digit OTP">
+          <p class="note">Seller verifies this OTP to release e-waste and receive instant payment of ₹4,500.</p>
+        </div>
+        <button class="primary" onclick="verifyAndSettle()">Verify OTP & Receive Amount ₹4,500 <span aria-hidden="true">→</span></button>
+        <div id="outputLog" class="output" aria-live="polite">System ready. Click "Send Receive OTP" when collector arrives at seller doorstep.</div>
+        <div class="footer-note">Protected handover · Escrow payment is released upon OTP confirmation</div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const activeSessions = new Map();
+    const pickupJobId = 'JOB_EKART_2026_99';
+
+    function setStatus(text, settled = false) {
+      document.getElementById('statusDot').className = settled ? 'status-dot settled' : 'status-dot';
+      document.getElementById('statusText').innerText = text;
+    }
+
+    function requestOtp() {
+      const mobile = document.getElementById('userMobile').value.trim();
+      if (!mobile) return alert('Enter seller mobile number.');
+      const randomBytes = new Uint32Array(1);
+      crypto.getRandomValues(randomBytes);
+      const generatedOtp = String(randomBytes[0] % 1000000).padStart(6, '0');
+      const expiresAt = Date.now() + 10 * 60 * 1000;
+      activeSessions.set(pickupJobId, { mobile, otp: generatedOtp, expiresAt, attempts: 0 });
+      document.getElementById('otpBox').value = generatedOtp;
+      setStatus('OTP sent to seller mobile');
+      document.getElementById('outputLog').innerText = `[SUCCESS] Receive OTP ${generatedOtp} sent to seller (${mobile}).\nSeller can now enter this OTP to receive payout of ₹4,500.`;
+    }
+
+    function verifyAndSettle() {
+      const enteredOtp = document.getElementById('otpBox').value.trim();
+      const session = activeSessions.get(pickupJobId);
+      if (!session) { document.getElementById('outputLog').innerText = 'ERROR: Please click "Send Receive OTP" first.'; return; }
+      if (Date.now() >= session.expiresAt) { activeSessions.delete(pickupJobId); setStatus('OTP expired'); document.getElementById('outputLog').innerText = 'ERROR: OTP expired. Click "Send Receive OTP" to generate a new one.'; return; }
+      session.attempts += 1;
+      if (session.otp !== enteredOtp) { document.getElementById('outputLog').innerText = session.attempts >= 3 ? 'ERROR: Maximum attempts reached. Generate a new OTP.' : 'ERROR: Invalid OTP. Please check the code sent to the seller.'; return; }
+      const amount = 4500;
+      const currency = 'INR';
+      const transactionCode = `PAY-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000000)).padStart(6, '0')}`;
+      const formattedAmount = new Intl.NumberFormat('en-IN', { style: 'currency', currency }).format(amount);
+      activeSessions.delete(pickupJobId);
+      setStatus('Payment settled · Handover complete', true);
+      document.getElementById('outputLog').innerText = `🎉 SUCCESS: Handover authenticated!\nAmount ${formattedAmount} has been credited to seller account.\nTransaction Reference: ${transactionCode}\nTraceability: Form 1 Manifest Certified.`;
+    }
+  </script>
+</body>
+</html>

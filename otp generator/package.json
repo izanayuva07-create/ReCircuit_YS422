@@ -1,0 +1,8 @@
+{
+  "name": "ewaste-otp-backend",
+  "version": "1.0.0",
+  "private": true,
+  "main": "sever.js",
+  "scripts": { "start": "node sever.js" },
+  "dependencies": { "express": "^4.21.2" }
+}
