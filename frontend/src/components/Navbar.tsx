@@ -18,6 +18,7 @@ const Navbar: React.FC = () => {
   const publicLinks = [
     { label: t('home'), href: '/' },
     { label: t('howItWorks'), href: '/#how-it-works' },
+    { label: 'Payment Gateway', href: '/payments' },
     { label: t('awareness'), href: '/awareness' },
     { label: t('safety'), href: '/safety' },
     { label: t('news'), href: '/news' },
@@ -65,14 +66,14 @@ const Navbar: React.FC = () => {
             <BrandLogo size="sm" showTagline />
           </Link>
 
-          <div className="hidden items-center gap-1 lg:flex">
+          <div className="hidden items-center gap-0.5 lg:flex">
             {publicLinks.map((link) => (
               <Link
                 key={link.href}
                 to={link.href}
                 aria-current={isActive(link.href) ? 'page' : undefined}
-                className="relative rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors hover:text-[var(--primary)]"
-                style={{ color: isActive(link.href) ? 'var(--primary)' : 'var(--text-secondary)' }}
+                className="relative rounded-lg px-3 py-2 transition-colors hover:text-[var(--primary)]"
+                style={{ fontFamily: 'Inter,sans-serif', fontSize: '0.795rem', fontWeight: 600, color: isActive(link.href) ? 'var(--primary)' : 'var(--text-secondary)', letterSpacing: '-0.005em' }}
               >
                 {link.label}
                 {isActive(link.href) && <span className="absolute inset-x-3 -bottom-0.5 h-px rounded-full" style={{ backgroundColor: 'var(--primary)' }} />}
@@ -202,23 +203,40 @@ const Navbar: React.FC = () => {
                   </Link>
                 ))}
               </div>
-              <div className="mt-3 flex gap-2 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
-                {isAuthenticated ? (
-                  <>
-                    <Link to="/notifications" onClick={closeMenu} className="touch-target relative grid place-items-center rounded-xl border" style={{ borderColor: 'var(--border)' }} aria-label="Notifications">
-                      <Bell size={18} />
-                      {unreadNotificationCount > 0 && <span className="absolute right-2 top-2 h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--danger)' }} />}
-                    </Link>
-                    <Link to={`/${user?.role}`} onClick={closeMenu} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: 'var(--primary)' }}>
-                      <LayoutDashboard size={17} /> Go to Dashboard
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <Link to="/login" onClick={closeMenu} className="flex min-h-11 flex-1 items-center justify-center rounded-xl border text-sm font-semibold" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}>Login</Link>
-                    <Link to="/select-role" onClick={closeMenu} className="flex min-h-11 flex-1 items-center justify-center rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: 'var(--primary)' }}>Get Started</Link>
-                  </>
-                )}
+              <div className="mt-3 flex flex-col gap-2 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+                {/* Mobile Language Switcher */}
+                <div className="grid grid-cols-3 gap-1 p-1 rounded-xl" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid var(--border)' }}>
+                  {LANGUAGES.map((lang) => (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      onClick={() => { setLanguage(lang.code); closeMenu(); }}
+                      className="flex flex-col items-center py-1.5 rounded-lg transition-all"
+                      style={{ fontFamily: 'Inter,sans-serif', fontSize: 11, fontWeight: 600, background: language === lang.code ? 'white' : 'transparent', color: language === lang.code ? 'var(--primary)' : 'var(--text-secondary)', boxShadow: language === lang.code ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', border: 'none', cursor: 'pointer' }}
+                    >
+                      <span style={{ fontSize: 16 }}>{lang.flag}</span>
+                      <span>{lang.nativeName}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  {isAuthenticated ? (
+                    <>
+                      <Link to="/notifications" onClick={closeMenu} className="touch-target relative grid place-items-center rounded-xl border" style={{ borderColor: 'var(--border)' }} aria-label="Notifications">
+                        <Bell size={18} />
+                        {unreadNotificationCount > 0 && <span className="absolute right-2 top-2 h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--danger)' }} />}
+                      </Link>
+                      <Link to={`/${user?.role}`} onClick={closeMenu} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: 'var(--primary)', fontFamily: 'Inter,sans-serif' }}>
+                        <LayoutDashboard size={17} /> Go to Dashboard
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link to="/login" onClick={closeMenu} className="flex min-h-11 flex-1 items-center justify-center rounded-xl border text-sm font-semibold" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)', fontFamily: 'Inter,sans-serif' }}>Login</Link>
+                      <Link to="/select-role" onClick={closeMenu} className="flex min-h-11 flex-1 items-center justify-center rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: 'var(--primary)', fontFamily: 'Inter,sans-serif' }}>Get Started</Link>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>

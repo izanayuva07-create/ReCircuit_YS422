@@ -81,6 +81,7 @@ export interface PlatformContextValue {
   withdrawBid: (id: string) => Bid;
   acceptBid: (id: string, scheduledAt?: string) => { bid: Bid; booking: Booking };
   updateBookingStatus: (id: string, status: PickupStatus) => Booking;
+  generatePickupOtp: (id: string) => string;
   verifyBookingOtp: (id: string, otp: string) => boolean;
   addInventoryItem: (input: AddInventoryItemInput) => InventoryItem;
   updateInventoryItem: (id: string, updates: Partial<InventoryItem>) => InventoryItem;

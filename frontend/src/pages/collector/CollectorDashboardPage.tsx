@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowRight, Banknote, BriefcaseBusiness, MapPin, PackageCheck, ScanLine, Truck } from 'lucide-react';
+import { ArrowRight, Banknote, BriefcaseBusiness, CreditCard, IndianRupee, MapPin, PackageCheck, ScanLine, Truck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import AwarenessCard from '../../components/AwarenessCard';
 import Button from '../../components/Button';
 import Modal from '../../components/Modal';
-import PageHeader from '../../components/PageHeader';
+import OledHeroBanner from '../../components/OledHeroBanner';
 import StatCard from '../../components/StatCard';
 import StatusBadge from '../../components/StatusBadge';
 import WasteCard from '../../components/WasteCard';
@@ -62,13 +62,25 @@ const CollectorDashboardPage: React.FC = () => {
 
   return (
     <div className="max-container py-7 md:py-9 flex flex-col gap-8">
-      <PageHeader
-        eyebrow="Collector workspace"
-        title={`Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, ${user?.name?.split(' ')[0] ?? 'Collector'}`}
-        description="Find nearby pickups, manage hand-offs, and prepare traceable digital lots."
-        actions={(
-          <Button leftIcon={<ScanLine size={17} />} onClick={() => navigate('/collector/scan')}>Scan item</Button>
-        )}
+      <OledHeroBanner
+        imageSrc="/collector-hero-oled.jpg"
+        imageAlt="Collector logistics OLED truck hero"
+        accentColor="#0f766e"
+        accentGlow="rgba(15,118,110,0.55)"
+        eyebrow={`Collector Workspace · ${new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening'}, ${user?.name?.split(' ')[0] ?? 'Collector'}`}
+        title="Logistics. Verified. Rewarded."
+        subtitle="Find nearby pickups, manage hand-offs, scan inventory and build traceable digital lots for certified recyclers."
+        stats={[
+          { label: 'live jobs', value: String(available.length), icon: BriefcaseBusiness },
+          { label: 'active pickups', value: String(activeBookings.length), icon: Truck },
+          { label: 'total earned', value: formatCurrency(totalEarnings), icon: IndianRupee },
+        ]}
+        actions={[
+          { label: 'Scan Item', href: '/collector/scan', icon: ScanLine, primary: true },
+          { label: 'Find Jobs', href: '/collector/jobs', icon: BriefcaseBusiness },
+          { label: 'Payment Gateway', href: '/collector/payments', icon: CreditCard },
+          { label: 'Build Lot', href: '/collector/lots/new', icon: PackageCheck },
+        ]}
       />
 
       <section className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4">
@@ -80,17 +92,18 @@ const CollectorDashboardPage: React.FC = () => {
         <StatCard label="Recycler matches" value={recyclerMatches} icon="Factory" color="#9333ea" />
       </section>
 
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { to: '/collector/jobs', icon: BriefcaseBusiness, title: 'Find nearby work', text: `${available.length} listings are accepting bids` },
-          { to: '/collector/scan', icon: ScanLine, title: 'Scan collected waste', text: 'Identify and add material to inventory' },
-          { to: '/collector/lots/new', icon: PackageCheck, title: 'Build a digital lot', text: 'Bundle inventory for a recycler' },
+          { to: '/collector/jobs', icon: BriefcaseBusiness, title: 'Find nearby work', text: `${available.length} listings accepting bids` },
+          { to: '/collector/payments', icon: CreditCard, title: 'Payment Gateway', text: 'Razorpay UPI payout to Source' },
+          { to: '/collector/scan', icon: ScanLine, title: 'Scan collected waste', text: 'Identify & add to inventory' },
+          { to: '/collector/lots/new', icon: PackageCheck, title: 'Build digital lot', text: 'Bundle inventory for recycler' },
         ].map(({ to, icon: Icon, title, text }) => (
-          <Link key={to} to={to} className="card p-4 flex items-center gap-3 group">
-            <span className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--primary-subtle)', color: 'var(--primary)' }}><Icon size={20} /></span>
+          <Link key={to} to={to} className="card p-4 flex items-center gap-3 group hover:border-blue-300 transition-colors">
+            <span className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'var(--primary-subtle)', color: 'var(--primary)' }}><Icon size={20} /></span>
             <span className="flex-1 min-w-0">
-              <span className="block text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</span>
-              <span className="block text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{text}</span>
+              <span className="block text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{title}</span>
+              <span className="block text-xs mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>{text}</span>
             </span>
             <ArrowRight size={16} style={{ color: 'var(--text-secondary)' }} />
           </Link>

@@ -166,10 +166,18 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return 'en';
   });
 
+  // Keep html[data-lang] in sync on mount
+  React.useEffect(() => {
+    document.documentElement.lang = language;
+    document.documentElement.setAttribute('data-lang', language);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const setLanguage = (lang: SupportedLanguage) => {
     setLanguageState(lang);
     try {
       localStorage.setItem('rc_selected_language', lang);
+      document.documentElement.lang = lang;
+      document.documentElement.setAttribute('data-lang', lang);
     } catch {
       // ignore
     }

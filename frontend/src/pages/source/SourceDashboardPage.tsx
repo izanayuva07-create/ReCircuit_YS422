@@ -11,10 +11,13 @@ import {
   Gamepad2,
   Sparkles,
   ShieldCheck,
+  CreditCard,
+  Recycle,
+  IndianRupee,
 } from 'lucide-react';
 import EmptyState from '../../components/EmptyState';
 import NotificationCard from '../../components/NotificationCard';
-import PageHeader from '../../components/PageHeader';
+import OledHeroBanner from '../../components/OledHeroBanner';
 import StatCard from '../../components/StatCard';
 import StatusBadge from '../../components/StatusBadge';
 import WasteCard from '../../components/WasteCard';
@@ -54,19 +57,25 @@ const SourceDashboardPage: React.FC = () => {
 
   return (
     <div className="max-container py-6 md:py-8 flex flex-col gap-7">
-      <PageHeader
-        eyebrow="Source dashboard"
-        title={`Hello${user?.name ? `, ${user.name.split(' ')[0]}` : ''}`}
-        description="Track your listings, compare collector bids, and follow every pickup through the recycling chain."
-        actions={(
-          <Link
-            to="/source/sell"
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-            style={{ backgroundColor: 'var(--primary)' }}
-          >
-            <Plus size={17} /> Sell e-waste
-          </Link>
-        )}
+      <OledHeroBanner
+        imageSrc="/source-hero-oled.jpg"
+        imageAlt="Source seller OLED circuit board hero"
+        accentColor="#16a34a"
+        accentGlow="rgba(22,163,74,0.55)"
+        eyebrow={`Source Portal · Hello${user?.name ? ` ${user.name.split(' ')[0]}` : ''}`}
+        title="Your E-Waste, Your Value."
+        subtitle="Track your listings, compare live collector bids, and follow every pickup through the certified recycling chain."
+        stats={[
+          { label: 'open listings', value: String(myListings.filter((l) => isOpenListing(l.status)).length), icon: Recycle },
+          { label: 'kg recycled', value: recycledWeight.toFixed(1), icon: Scale },
+          { label: 'received', value: formatCurrency(totalReceived), icon: IndianRupee },
+        ]}
+        actions={[
+          { label: 'Sell E-Waste', href: '/source/sell', icon: Plus, primary: true },
+          { label: 'Payment Gateway', href: '/source/payments', icon: CreditCard },
+          { label: 'Certificates', href: '/source/certificates', icon: Award },
+          { label: 'Eco-Game', href: '/source/gamification', icon: Gamepad2 },
+        ]}
       />
 
       <section aria-label="Account overview" className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">

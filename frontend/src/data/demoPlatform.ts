@@ -529,7 +529,7 @@ export const buildDemoPlatformData = (): PlatformSnapshot => {
       pickupAddress: '18, 4th Avenue, Anna Nagar, Chennai, Tamil Nadu',
       scheduledAt: relativeIso(0, 2),
       status: 'on_the_way',
-      otp: '7842',
+      otp: '849203',
       otpVerified: false,
       createdAt: relativeIso(-1),
     },
