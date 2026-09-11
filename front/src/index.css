@@ -2,30 +2,30 @@
 
 @layer base {
   :root {
-    --primary: #0b6b45;
-    --primary-light: #2f9a68;
-    --primary-dark: #06452f;
-    --primary-subtle: #e8f4ed;
-    --primary-soft: #d7eadf;
-    --surface: #fffefa;
-    --surface-muted: #f7faf7;
-    --surface-glass: rgba(252, 255, 252, 0.78);
-    --background: #f3f7f3;
-    --background-deep: #eaf1ec;
-    --text-primary: #101713;
-    --text-secondary: #5f6d64;
-    --text-tertiary: #849087;
-    --border: #dce6df;
-    --border-strong: #c8d8cd;
-    --success: #198754;
-    --warning: #c17a16;
-    --danger: #d64545;
-    --info: #3378b5;
-    --accent: #138a55;
-    --accent-alt: #141915;
-    --shadow-sm: 0 1px 2px rgba(13, 38, 25, 0.04), 0 5px 18px rgba(13, 38, 25, 0.045);
-    --shadow-md: 0 16px 40px rgba(13, 38, 25, 0.08);
-    --shadow-lg: 0 28px 70px rgba(7, 32, 19, 0.13);
+    --primary: #059669;
+    --primary-light: #10b981;
+    --primary-dark: #047857;
+    --primary-subtle: #ecfdf5;
+    --primary-soft: #d1fae5;
+    --surface: #ffffff;
+    --surface-muted: #f8fafc;
+    --surface-glass: rgba(255, 255, 255, 0.88);
+    --background: #f8fafc;
+    --background-deep: #f1f5f9;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-tertiary: #94a3b8;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --success: #059669;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --info: #0284c7;
+    --accent: #10b981;
+    --accent-alt: #0f172a;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04), 0 1px 3px 0 rgba(0, 0, 0, 0.03);
+    --shadow-md: 0 4px 16px -2px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 20px 40px -4px rgba(0, 0, 0, 0.08);
     --radius-card: 1rem;
     --radius-panel: 1.5rem;
   }
@@ -47,14 +47,81 @@
     margin: 0;
     padding: 0;
     overflow-x: hidden;
-    font-family: Inter, Geist, "SF Pro Display", "Segoe UI", system-ui, -apple-system, sans-serif;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'liga' 1, 'calt' 1;
+    font-size: 15px;
+    line-height: 1.65;
+    letter-spacing: -0.011em;
     background:
       radial-gradient(circle at 8% -10%, rgba(47, 154, 104, 0.08), transparent 28rem),
       var(--background);
     color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+  }
+
+  /* ── Per-language font stacks for perfect Indic rendering ── */
+  [data-lang='hi'] body, body[data-lang='hi'] {
+    font-family: 'Noto Sans Devanagari', 'Inter', sans-serif;
+    letter-spacing: 0;
+  }
+  [data-lang='ta'] body, body[data-lang='ta'] {
+    font-family: 'Noto Sans Tamil', 'Inter', sans-serif;
+    letter-spacing: 0;
+  }
+  [data-lang='te'] body, body[data-lang='te'] {
+    font-family: 'Noto Sans Telugu', 'Inter', sans-serif;
+    letter-spacing: 0;
+  }
+  [data-lang='kn'] body, body[data-lang='kn'] {
+    font-family: 'Noto Sans Kannada', 'Inter', sans-serif;
+    letter-spacing: 0;
+  }
+  [data-lang='bn'] body, body[data-lang='bn'] {
+    font-family: 'Noto Sans Bengali', 'Inter', sans-serif;
+    letter-spacing: 0;
+  }
+
+  /* ── Display / headline font: Manrope ── */
+  h1, h2, h3, h4, h5, h6, .display-font {
+    font-family: 'Manrope', 'Inter', sans-serif;
+    font-feature-settings: 'ss01' 1, 'liga' 1;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+  }
+
+  code, kbd, samp, pre, .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+    font-size: 0.875em;
+    font-variant-ligatures: none;
+  }
+
+  @keyframes laserScan {
+    0% {
+      top: 0%;
+      opacity: 0.8;
+    }
+    50% {
+      top: 96%;
+      opacity: 1;
+    }
+    100% {
+      top: 0%;
+      opacity: 0.8;
+    }
+  }
+
+  .laser-scan-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent 0%, #10b981 25%, #34d399 50%, #10b981 75%, transparent 100%);
+    box-shadow: 0 0 16px 3px rgba(16, 185, 129, 0.7), 0 0 30px 6px rgba(52, 211, 153, 0.4);
+    animation: laserScan 2.4s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 25;
   }
 
   button,
@@ -267,6 +334,25 @@
   to { width: 100%; }
 }
 
+@keyframes oled-glow-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+
+@keyframes fade-in-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in-down 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.oled-glow-pulse {
+  animation: oled-glow-pulse 4s ease-in-out infinite;
+}
+
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {
@@ -281,3 +367,51 @@
     transform: none;
   }
 }
+
+/* ══ MNC Corporate Sector Micro-Animations & White Theme Tokens ══ */
+@keyframes sector-lift {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-3px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes sector-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35); }
+  70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+@keyframes checkmark-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.sector-card {
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sector-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.08), 0 0 0 1.5px rgba(16, 185, 129, 0.25);
+}
+
+.sector-active {
+  animation: sector-pulse 2.2s infinite;
+}
+
+.animate-pop {
+  animation: checkmark-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
+}
+
+.card:hover {
+  border-color: #cbd5e1;
+}
+
+

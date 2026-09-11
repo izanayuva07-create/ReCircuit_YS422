@@ -1,11 +1,26 @@
-import React, { useMemo, useState } from 'react';
-import { AlertTriangle, Banknote, Box, CalendarClock, MapPin, Package, Phone, ShieldCheck, Truck, Weight } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import {
+  AlertTriangle,
+  Banknote,
+  Box,
+  CalendarClock,
+  CheckCircle2,
+  CreditCard,
+  MapPin,
+  Navigation,
+  Package,
+  Phone,
+  ShieldCheck,
+  Truck,
+  Weight,
+} from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Button from '../../components/Button';
 import EmptyState from '../../components/EmptyState';
 import PageHeader from '../../components/PageHeader';
 import ProgressStepper from '../../components/ProgressStepper';
 import StatusBadge from '../../components/StatusBadge';
+import RazorpayPaymentModal from '../../components/RazorpayPaymentModal';
 import { useAppContext } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { usePlatform } from '../../context/PlatformContext';
@@ -28,14 +43,17 @@ const CollectorJobDetailPage: React.FC = () => {
   const { id = '' } = useParams();
   const { user } = useAuth();
   const { showToast } = useAppContext();
-  const { listings, bids, bookings, getListing, placeBid, withdrawBid, updateBookingStatus, verifyBookingOtp } = usePlatform();
+  const { listings, bids, bookings, getListing, placeBid, withdrawBid, updateBookingStatus, generatePickupOtp } = usePlatform();
   const navigate = useNavigate();
+
   const listing = getListing(id) ?? listings.find((item) => item.id === id);
   const myBid = bids.find((bid) => bid.listingId === listing?.id && (bid.collectorId === user?.id || bid.collectorName === user?.name) && bid.status !== 'withdrawn');
   const booking = bookings.find((item) => item.listingId === listing?.id && (!myBid || item.bidId === myBid.id));
+
   const [offer, setOffer] = useState(String(listing?.expectedPrice ?? ''));
   const [notes, setNotes] = useState('');
-  const [otp, setOtp] = useState('');
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentInfo, setPaymentInfo] = useState<{ paid: boolean; paymentId?: string; upiId?: string } | null>(null);
 
   const steps = useMemo(() => {
     const activeIndex = booking ? bookingStages.indexOf(booking.status === 'collector_assigned' ? 'confirmed' : booking.status) : -1;
@@ -52,6 +70,8 @@ const CollectorJobDetailPage: React.FC = () => {
       </div>
     );
   }
+
+  const payableAmount = myBid?.offeredPrice ?? listing.expectedPrice;
 
   const submitBid = () => {
     const amount = Number(offer);
@@ -75,19 +95,6 @@ const CollectorJobDetailPage: React.FC = () => {
     if (nextStatus) {
       updateBookingStatus(booking.id, nextStatus);
       showToast(`Pickup marked ${stageLabel[nextStatus].toLowerCase()}.`, 'success');
-    }
-  };
-
-  const verifyOtp = () => {
-    if (!/^\d{4,6}$/.test(otp)) {
-      showToast('Enter the OTP shown by the source.', 'error');
-      return;
-    }
-    if (verifyBookingOtp(booking?.id ?? '', otp)) {
-      showToast('Pickup verified and added to inventory.', 'success');
-      navigate('/collector/inventory');
-    } else {
-      showToast('That OTP is incorrect. Ask the source to confirm it.', 'error');
     }
   };
 
@@ -133,7 +140,22 @@ const CollectorJobDetailPage: React.FC = () => {
             <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Item details</h2>
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 text-sm">
               <div><dt style={{ color: 'var(--text-secondary)' }}>Condition</dt><dd className="font-medium mt-0.5">{conditionLabels[listing.condition]}</dd></div>
-              <div><dt style={{ color: 'var(--text-secondary)' }}>Pickup location</dt><dd className="font-medium mt-0.5">{listing.pickupAddress}</dd></div>
+              <div>
+                <dt style={{ color: 'var(--text-secondary)' }}>Pickup location</dt>
+                <dd className="font-medium mt-0.5 flex items-center gap-2">
+                  <span>{listing.pickupAddress}</span>
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(listing.pickupAddress)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-md border"
+                    style={{ color: 'var(--primary)', borderColor: 'var(--border)' }}
+                    title="Open in Google Maps"
+                  >
+                    <Navigation size={11} /> Directions
+                  </a>
+                </dd>
+              </div>
             </dl>
             <p className="text-sm leading-relaxed mt-4" style={{ color: 'var(--text-secondary)' }}>{listing.description || 'No additional description was provided.'}</p>
           </section>
@@ -159,20 +181,120 @@ const CollectorJobDetailPage: React.FC = () => {
               <ProgressStepper steps={steps} className="mt-5" />
               <div className="mt-4 pt-4 border-t flex flex-col gap-2 text-xs" style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
                 <span className="flex gap-2"><CalendarClock size={14} /> {formatDate(booking.scheduledAt, true)}</span>
-                <span className="flex gap-2"><MapPin size={14} /> {booking.pickupAddress}</span>
+                <span className="flex gap-2">
+                  <MapPin size={14} /> {booking.pickupAddress}
+                </span>
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(booking.pickupAddress)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold hover:underline"
+                  style={{ color: 'var(--primary)' }}
+                >
+                  <Navigation size={13} /> Open Turn-by-Turn in Google Maps
+                </a>
                 <span className="flex gap-2"><Phone size={14} /> Contact details unlock for accepted pickups</span>
               </div>
 
-              {booking.status === 'otp_verification' ? (
-                <div className="mt-5">
-                  <label htmlFor="collector-otp" className="text-sm font-medium">Enter source OTP</label>
-                  <input id="collector-otp" inputMode="numeric" maxLength={6} value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, ''))} className="w-full border rounded-xl px-4 py-3 mt-2 text-center tracking-[0.4em] text-lg font-bold outline-none focus:ring-2 focus:ring-green-100" style={{ borderColor: 'var(--border)' }} placeholder="0000" />
-                  <Button fullWidth className="mt-3" onClick={verifyOtp}>Verify hand-off</Button>
+              {/* Collector-to-Source Payment section */}
+              <div className="mt-5 p-4 rounded-xl border" style={{ borderColor: 'var(--border)', background: 'var(--surface-muted)' }}>
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>Settlement to Source</span>
+                  <span className="font-semibold" style={{ color: 'var(--primary)' }}>Final Bid</span>
+                </div>
+                <div className="flex items-baseline justify-between mb-3">
+                  <span className="text-xl font-black" style={{ color: 'var(--text-primary)' }}>{formatCurrency(payableAmount)}</span>
+                  <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Payable via Razorpay UPI</span>
+                </div>
+
+                {paymentInfo?.paid ? (
+                  <div className="p-2.5 rounded-lg border flex items-center gap-2 text-xs" style={{ background: 'rgba(16, 185, 129, 0.08)', borderColor: 'rgba(16, 185, 129, 0.3)', color: '#059669' }}>
+                    <CheckCircle2 size={16} />
+                    <div>
+                      <p className="font-bold">Paid to Source ({listing.pickupAddress.split(',')[0] || 'Verified Generator'})</p>
+                      <p className="font-mono text-[10px] text-slate-500">Ref: {paymentInfo.paymentId}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    fullWidth
+                    variant="secondary"
+                    className="flex items-center justify-center gap-2 text-xs py-2.5"
+                    onClick={() => setIsPaymentModalOpen(true)}
+                  >
+                    <CreditCard size={15} /> Pay Source {formatCurrency(payableAmount)} (Razorpay UPI)
+                  </Button>
+                )}
+              </div>
+
+              {/* Collector Generated OTP Section */}
+              {booking.status !== 'completed' && !booking.otpVerified && booking.status !== 'cancelled' ? (
+                <div className="mt-5 p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 text-center">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white border border-emerald-300 text-[11px] font-bold text-emerald-800 mb-2">
+                    <ShieldCheck size={13} className="text-emerald-600" />
+                    <span>Collector Hand-off Token</span>
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900">Your Hand-off OTP</h3>
+                  <p className="text-xs text-slate-500 mt-1 mb-3">
+                    Provide this 6-digit code to the Source/Seller. They will verify it to confirm transfer.
+                  </p>
+
+                  <div className="flex justify-center gap-2 mb-3 font-mono">
+                    {(booking.otp || '849203').split('').map((digit, idx) => (
+                      <span
+                        key={idx}
+                        className="w-10 h-12 rounded-xl bg-white border-2 border-emerald-400 text-slate-900 text-xl font-black flex items-center justify-center shadow-sm"
+                      >
+                        {digit}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        navigator.clipboard.writeText(booking.otp || '849203');
+                        showToast('Hand-off OTP copied to clipboard.', 'success');
+                      }}
+                      className="text-xs font-semibold bg-white"
+                    >
+                      Copy OTP
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        const newCode = generatePickupOtp(booking.id);
+                        showToast(`New Hand-off OTP generated: ${newCode}`, 'success');
+                      }}
+                      className="text-xs font-semibold bg-white border border-slate-200"
+                    >
+                      Regenerate
+                    </Button>
+                  </div>
+                </div>
+              ) : booking.status === 'completed' || booking.otpVerified ? (
+                <div className="mt-5 p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-center animate-pop">
+                  <div className="w-10 h-10 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2">
+                    <CheckCircle2 size={22} />
+                  </div>
+                  <h3 className="text-sm font-bold text-emerald-900">OTP Verified by Source</h3>
+                  <p className="text-xs text-emerald-700 mt-1">
+                    Physical hand-off confirmed under CPCB E-Waste Rules 2022.
+                  </p>
+                  <Button
+                    fullWidth
+                    variant="primary"
+                    className="mt-4 text-xs font-bold bg-emerald-600 hover:bg-emerald-700"
+                    onClick={() => navigate('/collector/inventory')}
+                  >
+                    View in Inventory Lot
+                  </Button>
                 </div>
               ) : actionLabel[booking.status] ? (
                 <Button fullWidth className="mt-5" onClick={advancePickup}>{actionLabel[booking.status]}</Button>
-              ) : booking.status === 'completed' ? (
-                <Button fullWidth variant="secondary" className="mt-5" onClick={() => navigate('/collector/inventory')}>View in inventory</Button>
               ) : null}
             </section>
           ) : myBid ? (
@@ -195,6 +317,22 @@ const CollectorJobDetailPage: React.FC = () => {
           )}
         </aside>
       </div>
+
+      {booking && (
+        <RazorpayPaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          bookingId={booking.id}
+          listingTitle={listing.itemName}
+          sourceName={listing.pickupAddress.split(',')[0] || 'Verified Source Partner'}
+          sourceUpiId="source.recircuit@okhdfcbank"
+          finalBidAmount={payableAmount}
+          onPaymentSuccess={(details) => {
+            setPaymentInfo({ paid: true, paymentId: details.paymentId, upiId: details.upiId });
+            showToast(`Settlement of ${formatCurrency(payableAmount)} transferred to Source via Razorpay UPI!`, 'success');
+          }}
+        />
+      )}
     </div>
   );
 };

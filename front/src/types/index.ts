@@ -69,6 +69,33 @@ export interface WasteListing {
   updatedAt: string;
 }
 
+export interface YOLOv8Detection {
+  id: string;
+  label: string;
+  classId: string;
+  confidence: number;
+  box: [number, number, number, number];
+  material: string;
+  salvageAction: string;
+}
+
+export interface DINOv2Analysis {
+  model: string;
+  backbone: string;
+  embeddingDim: number;
+  featureSample: number[];
+  materialDecomposition: {
+    goldYieldGramsPerTon: number;
+    silverYieldGramsPerTon: number;
+    copperPurityPercent: number;
+    lithiumBatteryWeightKg: number;
+    rareEarthMinerals: string[];
+  };
+  salvageTier: string;
+  recyclabilityIndex: number;
+  compliance: string;
+}
+
 export interface AIAnalysisResult {
   detectedCategory: WasteCategory;
   detectedItems: string[];
@@ -80,6 +107,14 @@ export interface AIAnalysisResult {
   safetyWarnings: string[];
   isLoading: boolean;
   error?: string;
+  aiEngines?: {
+    yolov8?: {
+      model: string;
+      detectedCount: number;
+      components: YOLOv8Detection[];
+    };
+    dinov2?: DINOv2Analysis;
+  };
 }
 
 // ---- Bids ----

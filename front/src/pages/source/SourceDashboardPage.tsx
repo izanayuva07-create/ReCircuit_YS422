@@ -7,10 +7,17 @@ import {
   Leaf,
   Plus,
   Scale,
+  Award,
+  Gamepad2,
+  Sparkles,
+  ShieldCheck,
+  CreditCard,
+  Recycle,
+  IndianRupee,
 } from 'lucide-react';
 import EmptyState from '../../components/EmptyState';
 import NotificationCard from '../../components/NotificationCard';
-import PageHeader from '../../components/PageHeader';
+import OledHeroBanner from '../../components/OledHeroBanner';
 import StatCard from '../../components/StatCard';
 import StatusBadge from '../../components/StatusBadge';
 import WasteCard from '../../components/WasteCard';
@@ -50,19 +57,25 @@ const SourceDashboardPage: React.FC = () => {
 
   return (
     <div className="max-container py-6 md:py-8 flex flex-col gap-7">
-      <PageHeader
-        eyebrow="Source dashboard"
-        title={`Hello${user?.name ? `, ${user.name.split(' ')[0]}` : ''}`}
-        description="Track your listings, compare collector bids, and follow every pickup through the recycling chain."
-        actions={(
-          <Link
-            to="/source/sell"
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-            style={{ backgroundColor: 'var(--primary)' }}
-          >
-            <Plus size={17} /> Sell e-waste
-          </Link>
-        )}
+      <OledHeroBanner
+        imageSrc="/source-hero-oled.jpg"
+        imageAlt="Source seller OLED circuit board hero"
+        accentColor="#16a34a"
+        accentGlow="rgba(22,163,74,0.55)"
+        eyebrow={`Source Portal · Hello${user?.name ? ` ${user.name.split(' ')[0]}` : ''}`}
+        title="Your E-Waste, Your Value."
+        subtitle="Track your listings, compare live collector bids, and follow every pickup through the certified recycling chain."
+        stats={[
+          { label: 'open listings', value: String(myListings.filter((l) => isOpenListing(l.status)).length), icon: Recycle },
+          { label: 'kg recycled', value: recycledWeight.toFixed(1), icon: Scale },
+          { label: 'received', value: formatCurrency(totalReceived), icon: IndianRupee },
+        ]}
+        actions={[
+          { label: 'Sell E-Waste', href: '/source/sell', icon: Plus, primary: true },
+          { label: 'Payment Gateway', href: '/source/payments', icon: CreditCard },
+          { label: 'Certificates', href: '/source/certificates', icon: Award },
+          { label: 'Eco-Game', href: '/source/gamification', icon: Gamepad2 },
+        ]}
       />
 
       <section aria-label="Account overview" className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">
@@ -168,6 +181,52 @@ const SourceDashboardPage: React.FC = () => {
             )}
           </div>
 
+          {/* Eco-Points & Gamification Banner */}
+          <div className="card p-5 mt-5 bg-gradient-to-br from-amber-500/10 via-emerald-500/5 to-slate-900/5 border border-amber-500/20">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+                <Sparkles size={14} className="animate-pulse" /> 2,450 Eco-Points
+              </span>
+              <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold">
+                Level 4
+              </span>
+            </div>
+            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+              <Gamepad2 size={16} className="text-emerald-600" /> Eco-Sort Arcade
+            </h3>
+            <p className="text-xs mt-1 text-slate-500 dark:text-slate-400 leading-relaxed">
+              Sort electronic parts in real-time, dodge hazards, and redeem points for planted trees and pickup perks.
+            </p>
+            <Link
+              to="/source/gamification"
+              className="mt-3 inline-flex items-center justify-center gap-1.5 w-full py-2 px-3 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all"
+            >
+              Play Game & Claim Rewards <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          {/* Green Compliance Certificates Quick Widget */}
+          <div className="card p-5 mt-5 border border-emerald-200/80 dark:border-emerald-900/60 bg-emerald-50/30 dark:bg-emerald-950/20">
+            <div className="flex items-center gap-2 mb-2">
+              <ShieldCheck size={18} className="text-emerald-600" />
+              <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">Green Certificates</h3>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Official CPCB Form-1 compliance certificates verifying toxic destruction and critical mineral recovery.
+            </p>
+            <div className="mt-3 pt-3 border-t border-emerald-100 dark:border-emerald-900/50 flex items-center justify-between">
+              <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-300">
+                3 Certified Lots
+              </span>
+              <Link
+                to="/source/certificates"
+                className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+              >
+                View Registry <ArrowRight size={13} />
+              </Link>
+            </div>
+          </div>
+
           <div className="card p-5 mt-5" style={{ backgroundColor: 'var(--primary-subtle)' }}>
             <div className="flex items-center gap-2 mb-2">
               <Leaf size={18} style={{ color: 'var(--primary)' }} />
@@ -183,11 +242,13 @@ const SourceDashboardPage: React.FC = () => {
         </aside>
       </div>
 
-      <section className="grid sm:grid-cols-3 gap-3">
+      <section className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
         {[
           { icon: Plus, title: 'List another item', copy: 'Photograph and describe your e-waste.', to: '/source/sell' },
           { icon: CalendarCheck, title: 'Manage pickups', copy: 'Review pickup times and secure OTPs.', to: '/source/bookings' },
-          { icon: Scale, title: 'View your impact', copy: 'Follow materials through the recycling chain.', to: '/source/history' },
+          { icon: Scale, title: 'View your impact', copy: 'Follow materials through the chain.', to: '/source/history' },
+          { icon: Award, title: 'CPCB Certificates', copy: 'Print Form-1 recovery records.', to: '/source/certificates' },
+          { icon: Gamepad2, title: 'Eco-Sort Arcade', copy: 'Play game & redeem rewards.', to: '/source/gamification' },
         ].map(({ icon: Icon, title, copy, to }) => (
           <Link key={to + title} to={to} className="card p-4 flex items-start gap-3 transition-transform hover:-translate-y-0.5">
             <span className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'var(--primary-subtle)', color: 'var(--primary)' }}>

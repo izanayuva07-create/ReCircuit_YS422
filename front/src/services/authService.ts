@@ -8,6 +8,7 @@ import type { APIResponse, User, UserRole } from '../types';
 export interface LoginPayload {
   email: string;
   password: string;
+  role?: UserRole;
 }
 
 export interface SignupPayload {

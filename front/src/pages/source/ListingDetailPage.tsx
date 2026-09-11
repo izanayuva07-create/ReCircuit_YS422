@@ -13,6 +13,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import BidCard from '../../components/BidCard';
+import BidderAnalysisPanel from '../../components/BidderAnalysisPanel';
+import GreenCertificateModal from '../../components/GreenCertificateModal';
 import Button from '../../components/Button';
 import EmptyState from '../../components/EmptyState';
 import Modal from '../../components/Modal';
@@ -56,6 +58,7 @@ const ListingDetailPage: React.FC = () => {
   const [scheduledAt, setScheduledAt] = useState(futurePickupValue);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
   const [isWorking, setIsWorking] = useState(false);
+  const [certOpen, setCertOpen] = useState(false);
 
   const traceEvents = useMemo(() => listing ? getTraceEvents(listing, booking) : [], [listing, booking]);
 
@@ -297,19 +300,26 @@ const ListingDetailPage: React.FC = () => {
               <EmptyState title="No collector bids yet" description="Your active listing remains visible to nearby collectors. We will notify you when an offer arrives." />
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {[...listingBids]
-                .sort((a, b) => Number(b.status === 'pending') - Number(a.status === 'pending') || b.offeredPrice - a.offeredPrice)
-                .map((bid) => (
-                  <BidCard
-                    key={bid.id}
-                    bid={bid}
-                    showActions={!acceptedBid && canCancel}
-                    onAccept={(bidId) => setBidToAccept(listingBids.find((item) => item.id === bidId) ?? null)}
-                    onViewProfile={(collectorId) => setProfileBid(listingBids.find((item) => item.collectorId === collectorId) ?? null)}
-                  />
-                ))}
-            </div>
+            <>
+              <BidderAnalysisPanel
+                bids={listingBids}
+                expectedPrice={listing.expectedPrice}
+                onSelectBid={(bid) => setBidToAccept(bid)}
+              />
+              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {[...listingBids]
+                  .sort((a, b) => Number(b.status === 'pending') - Number(a.status === 'pending') || b.offeredPrice - a.offeredPrice)
+                  .map((bid) => (
+                    <BidCard
+                      key={bid.id}
+                      bid={bid}
+                      showActions={!acceptedBid && canCancel}
+                      onAccept={(bidId) => setBidToAccept(listingBids.find((item) => item.id === bidId) ?? null)}
+                      onViewProfile={(collectorId) => setProfileBid(listingBids.find((item) => item.collectorId === collectorId) ?? null)}
+                    />
+                  ))}
+              </div>
+            </>
           )}
         </section>
       )}
@@ -326,6 +336,15 @@ const ListingDetailPage: React.FC = () => {
             <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
               Each confirmed handover creates a clear record from your doorstep to an authorized recycling facility.
             </p>
+            <Button
+              fullWidth
+              variant="outline"
+              className="mt-4 bg-white"
+              onClick={() => setCertOpen(true)}
+            >
+              <ShieldCheck size={16} className="mr-2 text-emerald-600" />
+              View CPCB Form 1 Certificate
+            </Button>
           </div>
         </section>
       )}
@@ -408,6 +427,17 @@ const ListingDetailPage: React.FC = () => {
           </p>
         </div>
       </Modal>
+
+      <GreenCertificateModal
+        isOpen={certOpen}
+        onClose={() => setCertOpen(false)}
+        certificateData={{
+          itemName: listing.itemName,
+          category: CATEGORY_LABELS[listing.category],
+          weightKg: listing.weightKg,
+          collectorName: acceptedBid?.collectorName || 'EcoLogix Logistics (CPCB/REG/2023)',
+        }}
+      />
     </div>
   );
 };

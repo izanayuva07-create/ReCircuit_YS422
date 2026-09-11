@@ -164,6 +164,7 @@ export const PLACEHOLDER_BOOKING: Booking = {
   pickupAddress: 'Placeholder Address, Anna Nagar, Chennai',
   scheduledAt: '2024-01-16T17:00:00Z',
   status: 'on_the_way',
+  otp: '849203',
   otpVerified: false,
   createdAt: '2024-01-15T13:00:00Z',
 };

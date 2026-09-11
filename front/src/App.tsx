@@ -7,6 +7,8 @@ import CollectorLayout from './layouts/CollectorLayout';
 import PublicLayout from './layouts/PublicLayout';
 import RecyclerLayout from './layouts/RecyclerLayout';
 import SourceLayout from './layouts/SourceLayout';
+import AIChatbotWidget from './components/AIChatbotWidget';
+import { LanguageProvider } from './context/LanguageContext';
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
@@ -44,9 +46,12 @@ const ListingDetailPage = lazy(() => import('./pages/source/ListingDetailPage'))
 const ProfilePage = lazy(() => import('./pages/source/ProfilePage'));
 const SellWastePage = lazy(() => import('./pages/source/SellWastePage'));
 const SourceDashboardPage = lazy(() => import('./pages/source/SourceDashboardPage'));
+const SourceCertificatesPage = lazy(() => import('./pages/source/SourceCertificatesPage'));
+const GamificationPage = lazy(() => import('./pages/source/GamificationPage'));
+const PaymentGatewayPage = lazy(() => import('./pages/payments/PaymentGatewayPage'));
 
 const App: React.FC = () => (
-  <>
+  <LanguageProvider>
     <ScrollManager />
     <Suspense fallback={<Loader fullPage message="Loading Re-Circuit…" />}>
       <Routes>
@@ -58,6 +63,7 @@ const App: React.FC = () => (
           <Route path="terms" element={<TermsPage />} />
           <Route path="news" element={<NewsPage />} />
           <Route path="news/:id" element={<NewsArticlePage />} />
+          <Route path="payments" element={<PaymentGatewayPage />} />
         </Route>
 
         <Route path="login" element={<LoginPage />} />
@@ -78,6 +84,9 @@ const App: React.FC = () => (
             <Route path="bookings/:id" element={<BookingDetailPage />} />
             <Route path="booking/:id" element={<BookingDetailPage />} />
             <Route path="history" element={<HistoryPage />} />
+            <Route path="certificates" element={<SourceCertificatesPage />} />
+            <Route path="gamification" element={<GamificationPage />} />
+            <Route path="payments" element={<PaymentGatewayPage role="source" />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="*" element={<Navigate to="/source" replace />} />
           </Route>
@@ -95,6 +104,7 @@ const App: React.FC = () => (
             <Route path="lots" element={<CollectorLotsPage />} />
             <Route path="lots/new" element={<CreateLotPage />} />
             <Route path="lots/:id" element={<CollectorLotDetailPage />} />
+            <Route path="payments" element={<PaymentGatewayPage role="collector" />} />
             <Route path="history" element={<CollectorHistoryPage />} />
             <Route path="profile" element={<CollectorProfilePage />} />
             <Route path="*" element={<Navigate to="/collector" replace />} />
@@ -117,8 +127,9 @@ const App: React.FC = () => (
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
+      <AIChatbotWidget />
     </Suspense>
-  </>
+  </LanguageProvider>
 );
 
 export default App;

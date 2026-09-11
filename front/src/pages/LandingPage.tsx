@@ -107,9 +107,9 @@ const LandingPage: React.FC = () => (
         <div className="relative mt-12 grid gap-4 lg:grid-cols-[1fr_auto_1fr_auto_1fr_auto_0.8fr] lg:items-stretch">
           {ecosystemRoles.map(({ title, statement, description, icon: Icon, label }, index) => (
             <React.Fragment key={title}>
-              <Reveal delay={index * 90} className="card relative flex min-h-64 flex-col p-6 sm:p-7">
-                <span className="absolute right-5 top-5 text-xs font-bold tracking-widest" style={{ color: 'var(--text-tertiary)' }}>{label}</span>
-                <span className="grid h-12 w-12 place-items-center rounded-2xl" style={{ backgroundColor: 'var(--primary-subtle)', color: 'var(--primary)' }}><Icon size={23} /></span>
+              <Reveal delay={index * 90} className="card sector-card relative flex min-h-64 flex-col p-6 sm:p-7 shadow-sm border border-slate-200 hover:border-emerald-400">
+                <span className="absolute right-5 top-5 text-xs font-bold tracking-widest text-slate-400">{label}</span>
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-700 transition-transform group-hover:scale-110"><Icon size={23} /></span>
                 <h3 className="mt-8 text-xl font-bold tracking-[-0.025em]">{title}</h3>
                 <p className="mt-1 font-semibold" style={{ color: 'var(--primary)' }}>{statement}</p>
                 <p className="mt-4 text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>{description}</p>

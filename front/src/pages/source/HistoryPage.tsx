@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, History, Leaf, Package, Recycle, ShieldCheck } from 'lucide-react';
+import { ArrowRight, History, Leaf, Package, Recycle, ShieldCheck, Award } from 'lucide-react';
 import EmptyState from '../../components/EmptyState';
 import Modal from '../../components/Modal';
 import PageHeader from '../../components/PageHeader';
@@ -8,6 +8,7 @@ import StatCard from '../../components/StatCard';
 import StatusBadge from '../../components/StatusBadge';
 import Tabs from '../../components/Tabs';
 import TraceabilityTimeline from '../../components/TraceabilityTimeline';
+import GreenCertificateModal from '../../components/GreenCertificateModal';
 import { useAuth } from '../../context/AuthContext';
 import { usePlatform } from '../../context/PlatformContext';
 import type { WasteListing } from '../../types';
@@ -21,6 +22,7 @@ const HistoryPage: React.FC = () => {
   const { listings, bookings, transactions } = usePlatform();
   const [activeTab, setActiveTab] = useState<HistoryTab>('all');
   const [traceListing, setTraceListing] = useState<WasteListing | null>(null);
+  const [certListing, setCertListing] = useState<WasteListing | null>(null);
 
   const history = sortNewestFirst(listings.filter((listing) => !user?.id || listing.sourceId === user.id));
   const filtered = activeTab === 'all' ? history : history.filter((listing) => listing.status === activeTab);
@@ -123,6 +125,15 @@ const HistoryPage: React.FC = () => {
                     <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>No environmental impact counted for cancelled listings.</span>
                   )}
                   <div className="flex items-center gap-4 ml-auto">
+                    {['completed', 'picked_up'].includes(listing.status) && (
+                      <button
+                        type="button"
+                        onClick={() => setCertListing(listing)}
+                        className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 hover:text-emerald-700"
+                      >
+                        <Award size={14} /> Certificate
+                      </button>
+                    )}
                     {listing.status !== 'cancelled' && (
                       <button type="button" onClick={() => setTraceListing(listing)} className="text-sm font-semibold" style={{ color: 'var(--primary)' }}>
                         Trace journey
@@ -153,6 +164,25 @@ const HistoryPage: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {certListing && (
+        <GreenCertificateModal
+          isOpen={Boolean(certListing)}
+          onClose={() => setCertListing(null)}
+          certificateData={{
+            certId: `CPCB-RC-2026-IND-${certListing.id.replace(/\D/g, '').padStart(5, '0') || '84291'}`,
+            itemName: certListing.itemName,
+            category: `${certListing.category.toUpperCase()} (E-Waste Form-1 Certified)`,
+            weightKg: certListing.weightKg,
+            sellerName: user?.name || 'Verified Source Partner',
+            completedAt: formatDate(certListing.updatedAt),
+            goldGrams: parseFloat((certListing.weightKg * 0.28).toFixed(2)),
+            copperKg: parseFloat((certListing.weightKg * 0.24).toFixed(2)),
+            co2SavedKg: parseFloat((certListing.weightKg * 1.5).toFixed(1)),
+            hash: `${certListing.id}e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`,
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -8,4 +8,22 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    port: 5173,
+    proxy: {
+      '/api/v1': {
+        target: 'http://localhost:5050',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/v1/, '/v1'),
+      },
+      '/v1': {
+        target: 'http://localhost:5050',
+        changeOrigin: true,
+      },
+      '/socket.io': {
+        target: 'http://localhost:5050',
+        ws: true,
+      },
+    },
+  },
 })

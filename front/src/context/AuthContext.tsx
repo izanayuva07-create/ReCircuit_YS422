@@ -4,6 +4,7 @@ import type { User, UserRole } from '../types';
 export interface SignInInput {
   email: string;
   password: string;
+  role?: UserRole;
 }
 
 export interface SignUpInput extends SignInInput {

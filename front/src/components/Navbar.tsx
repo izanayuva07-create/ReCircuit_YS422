@@ -1,25 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { Bell, LayoutDashboard, LogIn, Menu, X } from 'lucide-react';
+import { Bell, LayoutDashboard, LogIn, Menu, X, Globe, ChevronDown } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import BrandLogo from './BrandLogo';
 import { useAuth } from '../context/AuthContext';
 import { usePlatform } from '../context/PlatformContext';
-
-const publicLinks = [
-  { label: 'Home', href: '/' },
-  { label: 'How It Works', href: '/#how-it-works' },
-  { label: 'Awareness', href: '/awareness' },
-  { label: 'Safety', href: '/safety' },
-  { label: 'News', href: '/news' },
-  { label: 'About', href: '/#about' },
-];
+import { useLanguage, LANGUAGES } from '../context/LanguageContext';
 
 const Navbar: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
   const { isAuthenticated, user } = useAuth();
   const { unreadNotificationCount } = usePlatform();
+  const { language, setLanguage, t } = useLanguage();
   const location = useLocation();
+
+  const publicLinks = [
+    { label: t('home'), href: '/' },
+    { label: t('howItWorks'), href: '/#how-it-works' },
+    { label: 'Payment Gateway', href: '/payments' },
+    { label: t('awareness'), href: '/awareness' },
+    { label: t('safety'), href: '/safety' },
+    { label: t('news'), href: '/news' },
+    { label: t('about'), href: '/#about' },
+  ];
 
   useEffect(() => {
     const update = () => setScrolled(window.scrollY > 18);
@@ -62,14 +66,14 @@ const Navbar: React.FC = () => {
             <BrandLogo size="sm" showTagline />
           </Link>
 
-          <div className="hidden items-center gap-1 lg:flex">
+          <div className="hidden items-center gap-0.5 lg:flex">
             {publicLinks.map((link) => (
               <Link
                 key={link.href}
                 to={link.href}
                 aria-current={isActive(link.href) ? 'page' : undefined}
-                className="relative rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors hover:text-[var(--primary)]"
-                style={{ color: isActive(link.href) ? 'var(--primary)' : 'var(--text-secondary)' }}
+                className="relative rounded-lg px-3 py-2 transition-colors hover:text-[var(--primary)]"
+                style={{ fontFamily: 'Inter,sans-serif', fontSize: '0.795rem', fontWeight: 600, color: isActive(link.href) ? 'var(--primary)' : 'var(--text-secondary)', letterSpacing: '-0.005em' }}
               >
                 {link.label}
                 {isActive(link.href) && <span className="absolute inset-x-3 -bottom-0.5 h-px rounded-full" style={{ backgroundColor: 'var(--primary)' }} />}
@@ -78,6 +82,51 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="hidden items-center gap-2 lg:flex">
+            {/* Regional Language Switcher */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setLangOpen(!langOpen)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-colors bg-white/70 hover:bg-white shadow-sm"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                aria-label="Change language"
+              >
+                <Globe size={14} className="text-emerald-600" />
+                <span>{LANGUAGES.find((l) => l.code === language)?.flag}</span>
+                <span className="font-medium">{LANGUAGES.find((l) => l.code === language)?.nativeName}</span>
+                <ChevronDown size={12} className="opacity-60" />
+              </button>
+
+              {langOpen && (
+                <div
+                  className="absolute right-0 mt-2 w-44 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-1.5 z-50 flex flex-col gap-0.5 animate-fade-in"
+                  style={{ backdropFilter: 'blur(16px)' }}
+                >
+                  {LANGUAGES.map((lang) => (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      onClick={() => {
+                        setLanguage(lang.code);
+                        setLangOpen(false);
+                      }}
+                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                        language === lang.code
+                          ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-bold'
+                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span>{lang.flag}</span>
+                        <span>{lang.nativeName}</span>
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-mono">{lang.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {isAuthenticated ? (
               <>
                 <Link
@@ -108,14 +157,14 @@ const Navbar: React.FC = () => {
                   className="inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold transition-colors hover:bg-white"
                   style={{ color: 'var(--text-primary)' }}
                 >
-                  <LogIn size={16} /> Login
+                  <LogIn size={16} /> {t('signIn')}
                 </Link>
                 <Link
                   to="/select-role"
                   className="premium-button inline-flex min-h-11 items-center rounded-xl px-4 py-2 text-sm font-semibold text-white"
                   style={{ backgroundColor: 'var(--primary)' }}
                 >
-                  Get Started
+                  {t('recycleBtn')}
                 </Link>
               </>
             )}
@@ -154,23 +203,40 @@ const Navbar: React.FC = () => {
                   </Link>
                 ))}
               </div>
-              <div className="mt-3 flex gap-2 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
-                {isAuthenticated ? (
-                  <>
-                    <Link to="/notifications" onClick={closeMenu} className="touch-target relative grid place-items-center rounded-xl border" style={{ borderColor: 'var(--border)' }} aria-label="Notifications">
-                      <Bell size={18} />
-                      {unreadNotificationCount > 0 && <span className="absolute right-2 top-2 h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--danger)' }} />}
-                    </Link>
-                    <Link to={`/${user?.role}`} onClick={closeMenu} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: 'var(--primary)' }}>
-                      <LayoutDashboard size={17} /> Go to Dashboard
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <Link to="/login" onClick={closeMenu} className="flex min-h-11 flex-1 items-center justify-center rounded-xl border text-sm font-semibold" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}>Login</Link>
-                    <Link to="/select-role" onClick={closeMenu} className="flex min-h-11 flex-1 items-center justify-center rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: 'var(--primary)' }}>Get Started</Link>
-                  </>
-                )}
+              <div className="mt-3 flex flex-col gap-2 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+                {/* Mobile Language Switcher */}
+                <div className="grid grid-cols-3 gap-1 p-1 rounded-xl" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid var(--border)' }}>
+                  {LANGUAGES.map((lang) => (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      onClick={() => { setLanguage(lang.code); closeMenu(); }}
+                      className="flex flex-col items-center py-1.5 rounded-lg transition-all"
+                      style={{ fontFamily: 'Inter,sans-serif', fontSize: 11, fontWeight: 600, background: language === lang.code ? 'white' : 'transparent', color: language === lang.code ? 'var(--primary)' : 'var(--text-secondary)', boxShadow: language === lang.code ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', border: 'none', cursor: 'pointer' }}
+                    >
+                      <span style={{ fontSize: 16 }}>{lang.flag}</span>
+                      <span>{lang.nativeName}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  {isAuthenticated ? (
+                    <>
+                      <Link to="/notifications" onClick={closeMenu} className="touch-target relative grid place-items-center rounded-xl border" style={{ borderColor: 'var(--border)' }} aria-label="Notifications">
+                        <Bell size={18} />
+                        {unreadNotificationCount > 0 && <span className="absolute right-2 top-2 h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--danger)' }} />}
+                      </Link>
+                      <Link to={`/${user?.role}`} onClick={closeMenu} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: 'var(--primary)', fontFamily: 'Inter,sans-serif' }}>
+                        <LayoutDashboard size={17} /> Go to Dashboard
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link to="/login" onClick={closeMenu} className="flex min-h-11 flex-1 items-center justify-center rounded-xl border text-sm font-semibold" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)', fontFamily: 'Inter,sans-serif' }}>Login</Link>
+                      <Link to="/select-role" onClick={closeMenu} className="flex min-h-11 flex-1 items-center justify-center rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: 'var(--primary)', fontFamily: 'Inter,sans-serif' }}>Get Started</Link>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>

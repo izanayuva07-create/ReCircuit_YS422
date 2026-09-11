@@ -9,24 +9,24 @@ import { useAuth } from '../../context/AuthContext';
 const roles: { role: UserRole; label: string; description: string; icon: React.ReactNode; color: string }[] = [
   {
     role: 'source',
-    label: 'Source',
-    description: 'I have e-waste to sell or recycle.',
+    label: 'Seller / Source',
+    description: 'I have e-waste to sell, inspect with AI, and recycle with Form 1 certificates.',
     icon: <UploadCloud size={28} />,
-    color: 'var(--primary)',
+    color: '#16a34a',
   },
   {
     role: 'collector',
-    label: 'Collector',
-    description: 'I collect e-waste from households and businesses.',
+    label: 'Collector Logistics',
+    description: 'I bid on e-waste lots, dispatch GPS-tracked vehicles, and aggregate inventory.',
     icon: <Truck size={28} />,
     color: '#0f766e',
   },
   {
     role: 'recycler',
-    label: 'Recycler',
-    description: 'I am an authorized recycling facility.',
+    label: 'Disposer / Recycler',
+    description: 'I operate an authorized refining, smelting, and hydrometallurgical recovery facility.',
     icon: <Factory size={28} />,
-    color: '#8a6a20',
+    color: '#d97706',
   },
 ];
 

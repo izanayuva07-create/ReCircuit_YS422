@@ -82,17 +82,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
     try {
       if (apiEnabled) {
-        const response = await loginUser({ email: input.email.trim().toLowerCase(), password: input.password });
-        if (!response.success || !response.data?.user || !response.data?.token) throw new Error(response.error || response.message || 'Sign in failed.');
+        const response = await loginUser({
+          email: input.email.trim().toLowerCase(),
+          password: input.password,
+          role: input.role,
+        });
+        if (!response.success || !response.data?.user || !response.data?.token)
+          throw new Error(response.error || response.message || 'Sign in failed.');
         login(response.data.user, response.data.token);
         return response.data.user;
       }
 
       const email = input.email.trim().toLowerCase();
       const account = readAccounts().find((candidate) => candidate.user.email.toLowerCase() === email);
-      if (!account || account.password !== input.password) throw new Error('Incorrect email or password. Try a demo account shown below.');
-      login(account.user, `demo-token-${account.user.id}`);
-      return account.user;
+      if (!account || account.password !== input.password) {
+        // Create demo session with chosen role
+        const role = input.role || (email.includes('collector') ? 'collector' : email.includes('recycler') ? 'recycler' : 'source');
+        const fallbackUser: User = {
+          id: `user_${role}`,
+          name: email.split('@')[0] || 'Demo User',
+          email,
+          role,
+          createdAt: new Date().toISOString(),
+        };
+        login(fallbackUser, `demo-token-${fallbackUser.id}`);
+        return fallbackUser;
+      }
+      const finalUser = input.role ? { ...account.user, role: input.role } : account.user;
+      login(finalUser, `demo-token-${finalUser.id}`);
+      return finalUser;
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : 'Unable to sign in.';
       setError(message);

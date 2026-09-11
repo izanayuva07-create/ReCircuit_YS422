@@ -1,7 +1,7 @@
 import React from 'react';
 import Sidebar from '../components/Sidebar';
 import MobileBottomNav from '../components/MobileBottomNav';
-import { Home, Plus, CalendarCheck, History, User } from 'lucide-react';
+import { Home, Plus, CalendarCheck, History, Award, Gamepad2, CreditCard, User } from 'lucide-react';
 import DashboardTopbar from '../components/DashboardTopbar';
 import AnimatedOutlet from '../components/AnimatedOutlet';
 
@@ -9,14 +9,17 @@ const sourceNavItems = [
   { label: 'Home', href: '/source', icon: Home },
   { label: 'Sell', href: '/source/sell', icon: Plus },
   { label: 'Bookings', href: '/source/bookings', icon: CalendarCheck },
+  { label: 'Payment Gateway', href: '/source/payments', icon: CreditCard },
   { label: 'History', href: '/source/history', icon: History },
+  { label: 'Certificates', href: '/source/certificates', icon: Award },
+  { label: 'Eco-Game', href: '/source/gamification', icon: Gamepad2 },
   { label: 'Profile', href: '/source/profile', icon: User },
 ];
 
 const SourceLayout: React.FC = () => (
-  <div className="flex min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
+  <div className="flex min-h-screen bg-slate-50">
     <Sidebar items={sourceNavItems} />
-    <div className="flex-1 flex flex-col min-w-0">
+    <div className="flex-1 flex flex-col min-w-0 bg-slate-50/60">
       <DashboardTopbar />
       <main className="flex-1 page-pb">
         <AnimatedOutlet />
